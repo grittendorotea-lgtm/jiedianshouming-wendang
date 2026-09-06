@@ -1,0 +1,17 @@
+export const navItems = [
+  { id: "overview", label: "1. 系统做什么" },
+  { id: "arch", label: "2. 整体架构" },
+  { id: "features", label: "3. 功能总表" },
+  { id: "r-collect", label: "4. 三路电阻采集" },
+  { id: "i-collect", label: "5. 电流采集" },
+  { id: "plc", label: "6. PLC 启停与凸轮监测" },
+  { id: "loop", label: "7. 测试主循环" },
+  { id: "speed", label: "8. 速度计算" },
+  { id: "protect", label: "9. 四类保护停机" },
+  { id: "chart", label: "10. 双轴实时曲线" },
+  { id: "save", label: "11. 保存与历史回显" },
+  { id: "db", label: "12. 数据库与参数" },
+  { id: "protocol", label: "13. Modbus 协议" },
+  { id: "classes", label: "14. 源码类说明" },
+  { id: "copy", label: "15. 报告可直接用段落" },
+] as const;
