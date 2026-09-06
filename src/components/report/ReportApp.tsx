@@ -224,7 +224,12 @@ export function ReportApp() {
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button asChild>
-                <a href="/md.html">手机阅读 Markdown</a>
+                <a href="https://litter.catbox.moe/ixh24k.html">
+                  手机长期阅读（至周二17:00）
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href="/md.html">本机 Markdown</a>
               </Button>
               <Button variant="outline" asChild>
                 <a href="/word">
@@ -246,8 +251,12 @@ export function ReportApp() {
                 className="h-28 w-28 rounded-md border border-border bg-white"
               />
               <div className="text-sm leading-7 text-slate-600">
-                <p className="font-medium text-slate-900">手机扫码阅读</p>
-                <p>用相机或微信扫码，打开 Markdown 阅读版。建议在 Safari / Chrome 中打开；微信里若打不开，点右上角选“用浏览器打开”。</p>
+                <p className="font-medium text-slate-900">手机扫码阅读（独立托管）</p>
+                <p>
+                  扫码打开的是独立网页，不依赖这台云端机器，按 72 小时托管计算，至少能看到
+                  2026年9月8日周二北京时间 17:00。建议在 Safari / Chrome
+                  打开；微信里若打不开，点右上角选“用浏览器打开”。请先点页面上的「下载 Word」存到手机。
+                </p>
               </div>
             </div>
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4">

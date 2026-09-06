@@ -20,7 +20,8 @@ npm run dev
 
 浏览器打开 [http://127.0.0.1:43217](http://127.0.0.1:43217)。
 
-- 手机 Markdown 阅读：[http://127.0.0.1:43217/md.html](http://127.0.0.1:43217/md.html)
+- 手机阅读（独立托管，覆盖周二 17:00）：[https://litter.catbox.moe/ixh24k.html](https://litter.catbox.moe/ixh24k.html)
+- 本机 Markdown 阅读：[http://127.0.0.1:43217/md.html](http://127.0.0.1:43217/md.html)
 - 下载 Word：[http://127.0.0.1:43217/word](http://127.0.0.1:43217/word)（文件也在 `docs/继电器接点寿命测试软件-课题报告.docx`）
 - 打印稿：[http://127.0.0.1:43217/print](http://127.0.0.1:43217/print)
 - 可粘贴正文：`docs/课题报告-功能实现分析.md`
