@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, Printer, X } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { navItems } from "./nav-items";
+import { PartFive } from "./sections/PartFive";
 import { PartFour } from "./sections/PartFour";
 import { PartOne } from "./sections/PartOne";
 import { PartThree } from "./sections/PartThree";
@@ -69,9 +71,16 @@ export function ReportApp() {
           <p className="text-xs text-amber-800">课题报告讲义</p>
           <p className="font-semibold text-slate-900">接点接触电阻监测系统</p>
         </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/print" aria-label="打开打印稿">
+              <Printer className="h-4 w-4" />
+            </Link>
+          </Button>
         <Button variant="outline" size="icon" onClick={() => setOpen((v) => !v)}>
           {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </Button>
+        </div>
       </div>
 
       {open ? (
@@ -94,6 +103,13 @@ export function ReportApp() {
             <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
               对照 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon 逐项拆功能实现。
             </p>
+            <Link
+              href="/print"
+              className="mt-4 inline-flex items-center gap-1.5 text-xs text-sidebar-primary hover:underline"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              打开打印稿
+            </Link>
           </div>
           <Separator className="bg-sidebar-border" />
           <ScrollArea className="h-[calc(100vh-210px)] px-3 py-4">{nav}</ScrollArea>
@@ -119,11 +135,18 @@ export function ReportApp() {
             <PartTwo />
             <PartThree />
             <PartFour />
+            <PartFive />
           </div>
 
           <footer className="mt-16 max-w-3xl border-t border-border pt-6 text-sm text-slate-500">
             分析范围：ZzhejiPanel.java、DianZu00000.java、JiaoL.java、ExecuteCommon.java。
             PLC 读写类 RRuANDWone 未包含在这批文件中，其行为根据主界面调用还原。
+            完整可粘贴正文见仓库 <code>docs/课题报告-功能实现分析.md</code>
+            ，或打开
+            <Link href="/print" className="mx-1 text-primary underline-offset-4 hover:underline">
+              打印稿
+            </Link>
+            导出 PDF。
           </footer>
         </main>
       </div>

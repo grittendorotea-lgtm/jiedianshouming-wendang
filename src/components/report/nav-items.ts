@@ -14,4 +14,10 @@ export const navItems = [
   { id: "protocol", label: "13. Modbus 协议" },
   { id: "classes", label: "14. 源码类说明" },
   { id: "copy", label: "15. 报告可直接用段落" },
+  { id: "workflow", label: "16. 操作员完整流程" },
+  { id: "seq", label: "17. 一拍串口时序" },
+  { id: "ui-map", label: "18. 界面控件对照" },
+  { id: "threads", label: "19. 线程与串口调度" },
+  { id: "limits", label: "20. 不足与改进" },
+  { id: "copy2", label: "21. 续写可用段落" },
 ] as const;

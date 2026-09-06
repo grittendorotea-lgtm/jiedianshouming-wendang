@@ -57,3 +57,10 @@
 .prose-report h3 {
   scroll-margin-top: 5.5rem;
 }
+
+@media print {
+  aside,
+  .lg\\:hidden {
+    display: none !important;
+  }
+}
