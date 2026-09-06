@@ -103,7 +103,7 @@ export function ReportApp() {
         寿命测试软件
       </h1>
       <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
-        第十六节为 4 拖 1，第十七节为重难点，第十八节为模块框图与关键算法。点目录即可跳转。
+        第十六节为 4 拖 1，第十七节为重难点，第十八节按论文稿给出七层框图、公式与关键算法。点目录即可跳转。
       </p>
       <Link
         href="/print"
@@ -198,7 +198,7 @@ export function ReportApp() {
             </p>
             <p className="mt-4 text-[16px] leading-8 text-slate-600">
               对照源码整理。前十五节为基础实现，第十六节为 4 拖
-              1，第十七节为重难点，第十八节给出模块框图与源码中的关键算法。
+              1，第十七节为重难点，第十八节按论文稿给出七层模块框图、公式 (1)–(13) 与关键算法。
             </p>
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4">
               <p className="text-sm font-semibold text-amber-950">摘要</p>

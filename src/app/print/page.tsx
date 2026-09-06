@@ -29,7 +29,7 @@ export default function PrintPage() {
       <p className="mt-1 text-lg text-slate-700">功能实现与关键技术分析</p>
       <p className="mt-4 leading-8 text-slate-600">
         前十五节写基础版功能与关键技术，第十六节单独写 4 拖 1
-        方案，第十七节归纳重难点，第十八节给出模块框图与关键算法。浏览器打印即可导出
+        方案，第十七节归纳重难点，第十八节按论文稿给出七层框图、公式与关键算法。浏览器打印即可导出
         PDF。
       </p>
       <div className="mt-10 space-y-14">

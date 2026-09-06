@@ -1,381 +1,566 @@
-import { Algo, Callout, CodeBlock, KvTable, Section, Sub } from "../blocks";
-import {
-  ArrowDown,
-  ChartNode,
-  Figure,
-  LayerStack,
-  Split,
-  VChart,
-} from "../flowchart";
+import { Algo, Callout, Formula, KvTable, PaperImg, Section, Sub } from "../blocks";
 
 export function PartSeven() {
   return (
-    <Section id="algo" kicker="第十八节" title="模块框图与关键算法分析">
+    <Section id="algo" kicker="第十八节" title="模块框图与关键算法">
       <p>
-        本章按论文体例组织：先给出软件模块框图，再对源码中实际运行的算法作形式化描述。每一算法给出输入、输出、步骤、复杂度与正确性条件，并标注对应类与方法。分析范围限于{" "}
-        <code>ZzhejiPanel</code>、<code>DianZu00000</code>、<code>JiaoL</code>、
-        <code>ExecuteCommon</code>、<code>SixMeterInstrumentReader</code> 以及 4
-        拖 1 面板对 <code>RRuANDWone</code> 的调用，不引入源码未出现的算法。
+        本节对应论文「软件系统设计 / 测控系统设计」章节，按 Word 稿《继电器寿命测试软件系统：模块框图与关键算法分析》整理。软件平台为
+        Java 桌面端测控系统；核心对象是继电器或往复机构寿命试验中的接触电阻、工作电流与动作状态；主要技术为 Java
+        Swing、JFreeChart、jSerialComm、Modbus RTU、JDBC 与多线程。文中所称「算法」属于实时测控、工业通信与故障诊断，不是机器学习。
+      </p>
+      <p>
+        稿中框图与流程图按基础版单工位源码绘制。4 拖 1 拓展版的仪器轮询、八字状态同步读取与分站 Future
+        调度列在 18.8，不并入基础版七层叙述。
       </p>
 
-      <Sub title="1）总体模块框图">
+      <Sub id="p18-1" title="18.1 软件系统总体设计">
         <p>
-          软件按职责划分为四个子系统。人机交互子系统负责参数输入、状态显示与曲线交互；试验控制子系统维护状态机、沿闭锁、保护判定与速度估算；设备通信子系统完成
-          Modbus-RTU 组帧、校验与串口时分；数据访问子系统完成阈值读取、曲线批插与故障台账。子系统之间只通过明确的数据契约交互：控制层向通信层发出“读输入
-          / 读表 / 写线圈”请求，向数据层发出“查阈值 / 批插 / 记故障”请求，向交互层回写文本框，再由监听器驱动曲线。
+          该软件面向继电器或具有往复动作机构的寿命试验过程，采用「上位机界面—串口通信—PLC/IO
+          状态采集—电参数采集—实时判定—联锁控制—曲线显示—数据库追溯」的闭环结构。软件不仅完成测试数据的显示与保存，还承担动作状态识别、速度计算、接触电阻与电流越限判定、机构超时诊断以及异常停机控制等实时测控任务。
         </p>
-        <Figure no="18-1" title="软件总体模块框图">
-          <LayerStack
-            layers={[
-              {
-                title: "人机交互　ZzhejiPanel",
-                detail: "编号 / 日期 / 次数 / 速度 / 双Y轴曲线 / 启停与保存",
-                tone: "ui",
-              },
-              {
-                title: "试验控制　状态机 · 沿闭锁 · 保护 · 速度 · 增量游标",
-                detail: "X1/X2 驱动采集节拍；四类门禁写线圈；loadedPointCount 控制续测",
-                tone: "comm",
-              },
-              {
-                title: "设备通信　RRuANDWone / DianZu00000 / JiaoL / SixMeterInstrumentReader",
-                detail: "Modbus RTU · CRC-16 · 基础版 COM3 时分 · 4拖1 COM4/COM5 分离",
-                tone: "dev",
-              },
-              {
-                title: "数据访问　ExecuteCommon / JdbcDeal / DBConnection",
-                detail: "d_dianzumax · allcount · test_results · policetime",
-                tone: "data",
-              },
-            ]}
-          />
-        </Figure>
+        <p>
+          从软件工程角度看，系统划分为七个相互协同的功能层：人机交互与参数管理层、测试控制与并发调度层、设备通信与协议层、数据采集与信号解析层、实时控制与故障诊断算法层、实时曲线与交互可视化层，以及数据持久化与历史回放层。各层之间通过状态量、测量量和控制命令形成闭环数据流。
+        </p>
+        <PaperImg
+          src="/figures/fig1-module-architecture.png"
+          no="18-1"
+          title="软件总体模块框图（论文图 1）"
+        />
+        <p>
+          图中七层自顶向下对应人机交互与参数管理、测试控制与并发调度、设备通信与协议、数据采集与信号解析、实时控制与故障诊断、实时曲线与交互可视化、数据持久化与历史回放。诊断层发现故障后回写通信层停机，曲线层与数据层双向回放。
+        </p>
+        <p className="text-sm font-semibold text-slate-900">
+          表 1　图 1 各层级的技术与算法对应关系
+        </p>
         <KvTable
           rows={[
             {
-              k: "控制→通信",
-              v: "readInputRegisters、writeSingleRegister、startReading / readAndStoreValues / get*Value。4 拖 1 中读表退化为缓存 getter。",
+              k: "① 人机交互层",
+              v: "参数管理、操作控制、实时量显示。技术：Swing、FlatLaf、JDatePicker。机制：事件驱动、参数合法性校验。输入编号/日期/阈值/用户命令，输出测试配置与界面状态。",
             },
             {
-              k: "控制→数据",
-              v: "getDianzumaxValue、getTestmaxValue1、saveTestResultsBatch、saveToPolicetimeTable、addAllCountBySaveCount。",
+              k: "② 控制调度层",
+              v: "测试状态、多线程、UI 线程协调。技术：ExecutorService、Future、AtomicBoolean。机制：任务调度、状态去重、线程安全更新。输入测试命令与状态标志，输出后台采集任务与 UI 刷新任务。",
             },
             {
-              k: "通信→控制",
-              v: "输入字 X1/X2（或八路凸轮）、带单位字符串、CRC 失败时的 0 / 空帧。",
+              k: "③ 通信协议层",
+              v: "串口、寄存器读写、帧校验。技术：jSerialComm、Modbus RTU。机制：0x04/0x06、CRC-16/Modbus。输入地址/寄存器/控制值，输出状态响应与控制输出。",
             },
             {
-              k: "交互→控制",
-              v: "按钮切换 isTestingStarted；文本插入触发 DocumentListener，四路齐备后 updateChart。",
+              k: "④ 数据采集层",
+              v: "PLC 状态、电阻、电流采集。类：RRuANDWone、DianZu00000、JiaoL。机制：寄存器解析、正则数值提取。输入原始字节/测量字符串，输出 value/value2、R1–R3、I。",
+            },
+            {
+              k: "⑤ 诊断算法层",
+              v: "速度、越限、超时、终止判定。技术：System.currentTimeMillis、阈值参数。机制：120/Δt、Rmax 判定、I>2.1 A、12 s 看门狗。输入状态量、时间、电参数，输出正常/故障/停机条件。",
+            },
+            {
+              k: "⑥ 可视化层",
+              v: "实时曲线、双 Y 轴、光标查询。技术：JFreeChart、XYPlot、XYSeries。机制：动态窗口、最近邻点检索。输入 R1–R3、I、采样序号，输出趋势曲线与光标数值。",
+            },
+            {
+              k: "⑦ 数据层",
+              v: "结果保存、历史回放、故障追溯。技术：JDBC、PreparedStatement。机制：批量入库、增量续写、按编号升序回放。输出 test_results、policetime、历史曲线。",
             },
           ]}
         />
       </Sub>
 
-      <Sub title="2）基础版采集—控制数据流">
-        <p>
-          基础版把 PLC 巡检、电阻同步轮询和电流异步监听编排在同一把 COM3
-          上。模块之间的时序关系不是“周期采样”，而是“凸轮电平上升沿触发一次事务”。事务结束后口必须归还，否则下一模块无法打开串口。
+      <Sub id="p18-11" title="18.1.1 软件开发技术与运行机制">
+        <p className="text-sm font-semibold text-slate-900">
+          表 2　软件主要开发技术及其功能
         </p>
-        <Figure no="18-2" title="基础版采集控制数据流">
-          <VChart>
-            <ChartNode kind="start">试验控制循环（线程池）</ChartNode>
-            <ArrowDown />
-            <ChartNode kind="io">RRuANDWone 读 X1 / X2</ChartNode>
-            <ArrowDown />
-            <Split
-              leftLabel="X1 上升沿"
-              rightLabel="X2 上升沿"
-              left={
-                <VChart>
-                  <ChartNode kind="io">DianZu00000 问 2/3/4</ChartNode>
-                </VChart>
-              }
-              right={
-                <VChart>
-                  <ChartNode kind="io">JiaoL 问 1，写入隐藏框</ChartNode>
-                </VChart>
-              }
-            />
-            <ArrowDown />
-            <ChartNode>四路显示框对齐 → updateChart</ChartNode>
-            <ArrowDown />
-            <ChartNode>保护判定 → 写线圈 / policetime</ChartNode>
-            <ArrowDown />
-            <ChartNode kind="end">保存：增量批插 test_results</ChartNode>
-          </VChart>
-        </Figure>
-      </Sub>
-
-      <Sub title="3）4拖1 调度模块框图">
-        <p>
-          拓展后的模块边界发生变化：测量从试验循环中剥离，成为独立的生产者；四个工位循环成为消费者。控制面仍走
-          PLC，但读输入由一次 8 字事务供给四套状态机。
-        </p>
-        <Figure no="18-3" title="4拖1 调度模块框图">
-          <VChart>
-            <ChartNode kind="start">工位 i 控制循环</ChartNode>
-            <ArrowDown />
-            <Split
-              leftLabel="控制面"
-              rightLabel="测量面"
-              left={
-                <VChart>
-                  <ChartNode kind="io">COM4　RRuANDWone</ChartNode>
-                  <ArrowDown />
-                  <ChartNode>synchronized 读 8 字 / 写线圈 i</ChartNode>
-                </VChart>
-              }
-              right={
-                <VChart>
-                  <ChartNode kind="io">COM5　SixMeterInstrumentReader</ChartNode>
-                  <ArrowDown />
-                  <ChartNode>100ms 轮询 → ConcurrentHashMap</ChartNode>
-                </VChart>
-              }
-            />
-            <ArrowDown />
-            <ChartNode>工位 i 只读地址绑定的 getter</ChartNode>
-            <ArrowDown />
-            <ChartNode kind="end">保护只 cancel Future i，调度器不停</ChartNode>
-          </VChart>
-        </Figure>
-      </Sub>
-
-      <Sub title="4）关键算法一览">
-        <p>
-          下表列出源码中真正参与闭环的算法。滑动平均（窗口 5）仅存在于注释块，现行主路径是四舍五入，故不列为正式算法。
-        </p>
-        <div className="overflow-x-auto rounded-lg border border-border bg-white">
-          <table className="w-full min-w-[36rem] text-left text-sm">
-            <thead className="bg-slate-50 text-slate-600">
-              <tr>
-                <th className="px-3 py-2">编号</th>
-                <th className="px-3 py-2">算法</th>
-                <th className="px-3 py-2">所属问题</th>
-                <th className="px-3 py-2">实现位置</th>
-              </tr>
-            </thead>
-            <tbody className="text-slate-700">
-              {[
-                ["18-1", "状态驱动分时采集", "单总线互斥", "ZzhejiPanel 主循环"],
-                ["18-2", "Modbus CRC-16", "帧完整性", "DianZu00000 / JiaoL / SixMeter"],
-                ["18-3", "定点小数还原", "量纲还原", "parseResistanceValue / BigDecimal"],
-                ["18-4", "上升沿闭锁", "电平去重", "AtomicBoolean 三套旗标"],
-                ["18-5", "动作频次估算", "速度显示", "v = 120/Δt，Δt>2s"],
-                ["18-6", "四类保护判定", "联锁停机", "外层 continueLoop2"],
-                ["18-7", "多源采样对齐", "半拍点抑制", "隐藏框 + DocumentListener"],
-                ["18-8", "历史索引增量持久化", "续测不重插", "loadedPointCount"],
-                ["18-9", "有序最近邻查询", "曲线读数", "findClosestDataItem"],
-                ["18-10", "八从站时分轮询", "4拖1 测面", "queryIndex % 8"],
-                ["18-11", "工位级隔离停机", "4拖1 控制面", "寄存器 i + Future i"],
-              ].map((row) => (
-                <tr key={row[0]} className="border-t border-border align-top">
-                  {row.map((cell) => (
-                    <td key={cell} className="px-3 py-2">
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Sub>
-
-      <Sub title="5）通信与数值还原">
-        <Algo
-          no="18-2"
-          title="Modbus CRC-16（反射多项式 0xA001）"
-          inputs="字节序列 data[0..n−1]，校验长度 length（请求为前 6 字节，应答为除末 2 字节外的整帧）。"
-          outputs="16 位校验和。写入或比较时低字节在前。"
-          source="DianZu00000.calculateCRC、JiaoL.calculateCRC、SixMeterInstrumentReader.calculateCRC、ZzhejiPanel.calculateCRC，实现一致。"
-          steps={[
-            "令 crc ← 0xFFFF。",
-            "对 j = 0 … length−1：crc ← crc ⊕ (data[j] & 0xFF)。",
-            "重复 8 次：若 crc 最低位为 1，则 crc ← (crc >> 1) ⊕ 0xA001，否则 crc ← crc >> 1。",
-            "请求帧把 crc 的低 8 位、高 8 位依次写入字节 6、7；应答则与帧尾两字节比较，不等即丢弃。",
+        <KvTable
+          rows={[
+            {
+              k: "界面开发",
+              v: "Java Swing / JPanel / SwingUtilities。构建桌面端操作界面；事件分发线程负责安全刷新界面。",
+            },
+            {
+              k: "界面风格",
+              v: "FlatLaf。实现轻量化、现代化 Swing 外观。",
+            },
+            {
+              k: "日期控件",
+              v: "JDatePicker。测试日期选择与历史记录回显。",
+            },
+            {
+              k: "实时曲线",
+              v: "JFreeChart / XYPlot / XYSeries。显示三路接触电阻与一路电流的实时变化曲线。",
+            },
+            {
+              k: "串口通信",
+              v: "jSerialComm。访问 COM3 串口，波特率 9600 bit/s。",
+            },
+            {
+              k: "工业协议",
+              v: "Modbus RTU。0x04 读取输入寄存器；0x06 写单个保持寄存器。",
+            },
+            {
+              k: "报文校验",
+              v: "CRC-16/Modbus。初值 0xFFFF，多项式 0xA001，保障通信帧完整性。",
+            },
+            {
+              k: "并发调度",
+              v: "ExecutorService / Future。将实时测试循环放入后台线程执行，可中断任务。",
+            },
+            {
+              k: "并发安全",
+              v: "AtomicBoolean / volatile。状态防重复触发、跨线程可见性与流程同步。",
+            },
+            {
+              k: "数据库",
+              v: "JDBC / PreparedStatement。测试结果、累计次数、阈值参数及故障记录持久化。",
+            },
+            {
+              k: "数据驱动",
+              v: "DocumentListener。测量文本发生变化时触发曲线采样与刷新。",
+            },
           ]}
-          complexity="时间 O(8·length)，空间 O(1)。一帧 8～十余字节，开销可忽略，必须在入表前完成。"
-          correctness="该算法是多项式 0x8005 的 LSB-first 反射形式，与 Modbus-RTU 一致。正确性条件：参与计算的字节集合必须与对端相同。PLC 路径额外要求功能码字节等于 04H，否则 10ms 重问，避免把 03H 残帧当成凸轮沿。"
         />
+      </Sub>
+
+      <Sub id="p18-2" title="18.2 软件功能模块设计">
+        <p className="text-sm font-semibold text-slate-900">
+          18.2.1 人机交互与参数管理模块
+        </p>
+        <p>
+          该模块负责测试编号、测试日期、监测次数、速度、累计次数、最大允许接触电阻等信息的显示与管理，并提供开始测试、停止测试、保存、退出等操作入口。界面基于
+          Java Swing 构建，并通过 FlatLaf 优化视觉风格。测试编号采用可编辑下拉框形式，既可输入新编号，也可选择数据库中的历史编号。
+        </p>
+        <ul className="my-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+          <li>输入：测试编号、测试参数、用户操作命令。</li>
+          <li>处理：参数合法性检查、按钮事件分发、历史编号识别、界面状态切换。</li>
+          <li>输出：启动/停止命令、参数配置、实时测试状态。</li>
+        </ul>
+
+        <p className="text-sm font-semibold text-slate-900">
+          18.2.2 测试控制与并发调度模块
+        </p>
+        <p>
+          正式测试采用后台任务执行，以避免串口等待、设备采集和循环判定阻塞 Swing 事件分发线程。系统使用 ExecutorService
+          提交测试任务，并用 Future 保存当前任务句柄，在用户主动停止测试或退出页面时可取消执行中的任务。多个
+          AtomicBoolean 状态变量用于标记某个触发状态是否已经处理，从而避免同一输入信号在持续高电平期间被重复采样。
+        </p>
+        <ul className="my-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+          <li>后台测试循环与 UI 线程解耦。</li>
+          <li>AtomicBoolean 实现状态去重和线程安全标志。</li>
+          <li>SwingUtilities.invokeLater 将测量结果安全回写到界面。</li>
+          <li>测试退出时统一取消任务、关闭串口并重置状态变量。</li>
+        </ul>
+
+        <p className="text-sm font-semibold text-slate-900">
+          18.2.3 设备通信与 Modbus RTU 协议模块
+        </p>
+        <p>
+          通信层使用 jSerialComm 管理串口，并在 COM3、9600 bit/s 参数下与下位设备通信。软件直接构造 Modbus RTU
+          请求帧：功能码 0x04 用于读取输入寄存器，功能码 0x06 用于写单个保持寄存器。控制报文在发送前计算 CRC16
+          校验码，响应帧读取后再依据功能码和数据区进行解析。
+        </p>
+        <ul className="my-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+          <li>0x04：采集 PLC/IO 的输入状态。</li>
+          <li>0x06：写控制寄存器，实现试验机构启停与报警联锁。</li>
+          <li>CRC-16/Modbus：对请求帧执行循环异或与右移运算，降低通信误码风险。</li>
+        </ul>
+
+        <p className="text-sm font-semibold text-slate-900">
+          18.2.4 数据采集与信号解析模块
+        </p>
+        <p>
+          系统包含三类核心采集对象：PLC/IO 状态、三路接触电阻以及一路工作电流。首先轮询设备地址 0x08
+          的两个输入寄存器，得到动作相关状态量；当检测到指定状态后，软件切换到对应采集对象，读取 R1、R2、R3 或电流
+          I。测量字符串通过正则表达式提取数值部分并转换为 double，以便参与后续阈值计算和曲线绘制。
+        </p>
+        <ul className="my-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+          <li>状态量：value、value2。</li>
+          <li>电阻量：R1、R2、R3，显示单位 mΩ。</li>
+          <li>电流量：I，显示单位 A。</li>
+          <li>数据清洗：去除单位字符与非数值符号，统一转为 double。</li>
+        </ul>
+
+        <p className="text-sm font-semibold text-slate-900">
+          18.2.5 实时控制与故障诊断模块
+        </p>
+        <p>
+          该模块是软件的核心逻辑层。系统持续分析状态量、时间间隔、接触电阻、电流以及累计测试次数。当任一异常条件满足时，软件通过
+          Modbus 0x06 写控制寄存器执行停机/报警，并将故障原因保存到故障表中。与一般数据采集软件相比，该模块形成了「检测—诊断—执行—记录」的闭环控制链。
+        </p>
+        <ul className="my-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+          <li>接触电阻越限：任一路 R &gt; Rmax。</li>
+          <li>电流越限：I &gt; 2.1 A。</li>
+          <li>机构超时：相关状态持续超过 12 s 未出现有效变化。</li>
+          <li>次数终止：当前测试次数达到数据库配置的最大测试次数。</li>
+        </ul>
+
+        <p className="text-sm font-semibold text-slate-900">
+          18.2.6 实时曲线与交互可视化模块
+        </p>
+        <p>
+          曲线采用 JFreeChart 实现。三路接触电阻共享左侧 Y 轴，电流使用右侧 Y
+          轴，从而解决不同物理量量纲差异导致的显示问题。程序根据新数据动态追加 XYSeries，并维护 X
+          轴滑动显示窗口。鼠标在图表上移动或点击时，系统依据横坐标距离寻找最近数据点，实时显示 R1、R2、R3 和 I 的对应值。
+        </p>
+        <ul className="my-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+          <li>多序列同步绘制：R1 / R2 / R3 / I。</li>
+          <li>双 Y 轴：电阻与电流分轴显示。</li>
+          <li>动态 X 轴：仅显示最近一段数据，便于观察实时趋势。</li>
+          <li>最近邻检索：查找与鼠标横坐标距离最小的数据点。</li>
+        </ul>
+
+        <p className="text-sm font-semibold text-slate-900">
+          18.2.7 数据持久化与历史回放模块
+        </p>
+        <p>
+          系统通过 JDBC 对测试数据进行持久化。实时曲线由四组 X/Y 序列组成，保存时将同一采样序号下的四组曲线数据组织成批量插入记录。为了支持「历史编号继续测试」，程序保存
+          loadedPointCount 与 loadedTestBianHao：当当前编号与已回放编号一致时，仅保存新增点；若为新编号，则从第 0
+          个点开始保存。历史加载时按横坐标升序读取曲线，并恢复测试日期、测试次数和下一次绘图起点。
+        </p>
+        <ul className="my-3 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+          <li>批量写入 test_results，提高连续曲线保存效率。</li>
+          <li>增量保存，避免历史曲线重复入库。</li>
+          <li>按测试编号回放历史曲线。</li>
+          <li>policetime 保存异常类型、次数及故障发生时间。</li>
+        </ul>
+      </Sub>
+
+      <Sub id="p18-3" title="18.3 关键算法设计">
+        <p>
+          本系统中的「算法」主要属于实时测控、工业通信和故障诊断算法，而非机器学习算法。其设计目标是确保测量数据可采集、试验状态可识别、故障条件可判定、控制输出可及时执行，并保证历史数据可追溯。
+        </p>
+
+        <p className="text-sm font-semibold text-slate-900">
+          18.3.1 Modbus RTU CRC16 校验算法
+        </p>
+        <p>
+          Modbus RTU 报文采用 CRC16 校验。程序将 CRC 初值设为 0xFFFF，依次与数据字节异或；随后针对每个字节执行 8
+          次最低位判断。当最低位为 1 时，右移后再与多项式 0xA001 异或；否则仅右移。最终得到的 16
+          位 CRC 低字节先发送，高字节后发送。
+        </p>
+        <Formula no="1">CRC₀ = 0xFFFF</Formula>
+        <Formula no="2">CRC ← (CRC ≫ 1) ⊕ 0xA001　　（LSB = 1）</Formula>
+        <Formula no="3">CRC ← CRC ≫ 1　　（LSB = 0）</Formula>
+        <p>
+          其中 LSB 表示当前 CRC 的最低有效位。每个数据字节均进行 8 次移位运算。源码实现见{" "}
+          <code>RRuANDWone.calculateCRC16</code>。
+        </p>
         <Algo
-          no="18-3"
-          title="仪表定点测量值还原"
-          inputs="原始整数 raw（data[3..4] 大端）、小数位 d（data[6]）、单位码 u（data[8]）。"
-          outputs="工程量 x 及单位字符串。非法单位时 x = 0。"
-          source="基础版 DianZu00000.parseResistanceValue：x = raw / 10^d，u∈{3,4,5}→mΩ/Ω/kΩ。4 拖 1 用 BigDecimal.valueOf(raw).movePointLeft(min(max(d,0),3))，RoundingMode.HALF_UP。"
+          no="18-A"
+          title="CRC-16/Modbus"
+          inputs="请求帧字节 buf[0..n−1]（不含 CRC）"
+          outputs="crcLo、crcHi；发送顺序低字节在前"
+          source="RRuANDWone.calculateCRC16"
           steps={[
-            "若帧长 < 9 或 CRC 失败，返回 0，不更新缓存。",
-            "raw ← (data[3]<<8) | data[4]，d ← data[6]，u ← data[8]。",
-            "基础版：按 u 选择单位，x ← raw · 10^(−d)。",
-            "4 拖 1：将 d 截断到 [0,3]，用十进制左移避免二进制浮点误差，再按地址写入 ConcurrentHashMap。",
-            "界面显示带单位字符串；保护比较前用 extractNumber 去掉单位，得到纯标量。",
+            "crc ← 0xFFFF。",
+            "对每个字节：crc ← crc ⊕ byte；重复 8 次：若 LSB=1 则 crc ← (crc≫1) ⊕ 0xA001，否则 crc ← crc≫1。",
+            "crcLo = crc & 0xFF，crcHi = (crc≫8) & 0xFF。",
+          ]}
+          complexity="O(n)。单帧 n≤8，耗时可忽略。"
+          correctness="与 Modbus 规范多项式 0xA001、初值 0xFFFF 一致；低字节先发。"
+        />
+
+        <p className="pt-4 text-sm font-semibold text-slate-900">
+          18.3.2 状态边沿识别与防重复触发算法
+        </p>
+        <p>
+          PLC 输入状态在实际运行中可能连续保持为 1。若程序每轮循环都把高电平视为一次新动作，将导致同一机械动作被重复计数或重复采样。因此系统为不同状态配置
+          AtomicBoolean 标志。当状态首次由未处理进入有效状态时执行采集，并立即将标志置为已处理；待状态恢复后再重新开放下一次触发。该方法本质上相当于软件状态机中的边沿检测与去抖式去重。
+        </p>
+        <Algo
+          no="18-B"
+          title="上升沿闩锁"
+          inputs="本拍 X，上一有效标志 processed（AtomicBoolean）"
+          outputs="是否执行本拍采集"
+          source="ZzhejiPanel 测试循环"
+          steps={[
+            "若 X=1 且 processed=false：置 processed=true，执行采集。",
+            "若 X=0：置 processed=false，开放下一拍。",
+            "若 X=1 且 processed=true：本拍不采集。",
           ]}
           complexity="O(1)。"
-          correctness="还原式是仪表寄存器的约定映射，不是物理标定。单位码越界必须回 0，否则脏数据会进入 2.1 A 或 dianzumax 比较。基础版三路单位写入同一 dianZUnit1，最后一路覆盖显示单位，判定仍用 extractNumber 后的标量。"
+          correctness="持续高电平只产生一次有效边沿；复位条件写在 X=0 分支。"
         />
-        <CodeBlock title="extractNumber：显示串到标量">{`String number = text.replaceAll("[^\\\\d.\\\\-]", "");
-if (number.isEmpty()) throw new NumberFormatException(...);
-return Double.parseDouble(number);`}</CodeBlock>
+
+        <p className="pt-4 text-sm font-semibold text-slate-900">
+          18.3.3 基于状态触发时间差的速度估计算法
+        </p>
+        <p>
+          软件记录相邻有效触发事件的时间戳，通过时间差估计动作速度。源码中采用常数 120
+          与触发周期相除，并对结果进行四舍五入，因此可以将其表述为基于周期测量的频率/速度估计算法。tₖ 和 tₖ₋₁
+          为相邻两次有效触发的系统时间戳，单位为 ms；Δt 转换为 s。当 Δt 大于 2 s
+          时执行速度计算，并将结果显示在界面速度字段中。常数 120 的机械含义源码未注释，论文只写公式本身。
+        </p>
+        <Formula no="4">Δt = (tₖ − tₖ₋₁) / 1000</Formula>
+        <Formula no="5">v = round(120 / Δt)</Formula>
+
+        <p className="pt-4 text-sm font-semibold text-slate-900">
+          18.3.4 接触电阻阈值诊断算法
+        </p>
+        <p>
+          最大允许接触电阻 Rmax 从数据库读取，三路实测接触电阻分别记为 R1、R2、R3。当任一路超过设定上限时，系统判定当前测试异常，并执行停机与报警。该判据采用「任一路越限即故障」的保守策略，可防止单个触点性能劣化被平均值掩盖。故障发生后，系统进一步拼接具体超限通道及实测值，便于后续质量追溯。
+        </p>
+        <Formula no="6">Rfault = 1，　若 max(R₁, R₂, R₃) &gt; Rmax</Formula>
+        <Formula no="7">Rfault = 0，　否则</Formula>
+
+        <p className="pt-4 text-sm font-semibold text-slate-900">
+          18.3.5 电流越限判定算法
+        </p>
+        <p>
+          电流通道的故障阈值在当前程序中设置为 2.1 A。当采集电流 I
+          大于该阈值时，软件立即写入控制寄存器并结束当前测试循环，同时记录「电流值故障」。
+        </p>
+        <Formula no="8">Ifault = 1，　若 I &gt; 2.1 A</Formula>
+
+        <p className="pt-4 text-sm font-semibold text-slate-900">
+          18.3.6 基于时间窗口的机构超时故障诊断
+        </p>
+        <p>
+          系统分别跟踪两个关键动作状态的持续时间。如果某一动作状态在预期切换阶段持续超过 12
+          s，则认为对应机构可能出现卡滞、无转动或反馈丢失。程序随后执行报警输出、停机并写入故障日志。该算法属于典型的看门狗式时间约束诊断。与单纯判断
+          0/1 状态不同，它利用「状态持续时间」识别机械机构是否在合理时间内完成动作，因此更适合寿命试验过程中的卡滞和失步故障检测。源码窗口写为
+          12 s &lt; Δt &lt; 10000 s，上界用于避开计时未初始化的伪超时。
+        </p>
+        <Formula no="9">Tfault = 1，　若 Δt_no-signal &gt; 12 s</Formula>
+
+        <p className="pt-4 text-sm font-semibold text-slate-900">
+          18.3.7 测试次数终止判定
+        </p>
+        <p>
+          测试次数上限由数据库参数提供。系统在循环过程中比较当前计数坐标 timeSeconds
+          与目标次数，一旦达到或超过设定值，即写控制寄存器使试验停止。
+        </p>
+        <Formula no="10">Stop = 1，　若 Ncurrent ≥ Nset</Formula>
+
+        <p className="pt-4 text-sm font-semibold text-slate-900">
+          18.3.8 曲线最近邻点检索算法
+        </p>
+        <p>
+          为了支持图表交互，程序将鼠标位置转换为数据坐标 x，并在按横坐标有序存储的 XYSeries 中查找距离 |Xᵢ −
+          x| 最小的数据点。由于数据按 X 递增，当距离开始增大时即可提前终止搜索。该方法计算简单，能够在实时曲线浏览时快速返回光标附近的电阻和电流值。
+        </p>
+        <Formula no="11">i* = arg minᵢ |Xᵢ − xmouse|</Formula>
+        <Algo
+          no="18-C"
+          title="有序最近邻早停"
+          inputs="鼠标数据坐标 xmouse，有序序列 Xᵢ"
+          outputs="最近下标 i* 及对应 R1/R2/R3/I"
+          source="ZzhejiPanel 图表鼠标监听"
+          steps={[
+            "best ← +∞。",
+            "按 i 递增扫描；d = |Xᵢ − xmouse|。",
+            "若 d < best：更新 best 与 i*；若 d 开始增大：提前终止。",
+            "用 i* 回读四条曲线的 Y 值。",
+          ]}
+          complexity="最坏 O(n)，有序早停后通常远小于 n。"
+          correctness="X 单调递增时，距离先减后增，早停不漏最近邻。"
+        />
+
+        <p className="pt-4 text-sm font-semibold text-slate-900">
+          18.3.9 历史数据增量保存算法
+        </p>
+        <p>
+          为了避免在历史编号续测后重复写入已有曲线，系统将历史加载后的点数记录为 loadedPointCount。如果当前保存编号与已加载编号一致，则从
+          loadedPointCount 开始遍历新增点；否则视为新试验编号，从 0
+          开始保存。该设计实现了历史测试「加载—继续采集—仅追加新增点」的数据连续性，同时避免重复数据导致曲线和累计次数失真。
+        </p>
+        <Formula no="12">saveStartIndex = loadedPointCount，　若 IDcurrent = IDloaded</Formula>
+        <Formula no="13">saveStartIndex = 0，　否则</Formula>
       </Sub>
 
-      <Sub title="6）状态机、沿闭锁与速度">
-        <Algo
-          no="18-1"
-          title="状态驱动分时采集"
-          inputs="PLC 输入字 X1、X2；沿旗标 processed2、processed555111。"
-          outputs="本拍三路电阻与一路电流，或超时/超限停机。"
-          source="ZzhejiPanel 开始测试后提交到 executorServicebingxing 的双层 while。"
-          steps={[
-            "外层 continueLoop2 为真时进入内层。",
-            "调用 readAndProcessRegisters()：04H 读 2 字，功能码不符则重试。",
-            "若 X1=1 且 ¬processed2：置位，关闭 PLC 口，DianZu00000 串行问从站 2/3/4，invokeLater 刷新电阻框并抄入隐藏电流，关闭仪表口，内层结束。",
-            "若 X2=1 且 ¬processed555111：关闭 PLC 口，JiaoL 发一帧并等待约 200ms，结果写入 dianzu444NO，置位。",
-            "X1 或 X2 为 0 时累计灭灯时间，落入 (12,10000) 秒则写停机/报警并结束外层。",
-            "内层结束后外层比较电阻、电流、次数三道门禁，通过则延时 100ms 进入下一拍。",
-          ]}
-          complexity="每拍通信次数为常数：1 次 PLC 巡检 + 最多 3 次电阻 + 最多 1 次电流。占口时间由 50ms/200ms 等待主导。"
-          correctness="互斥条件是“任一时刻至多一个 SerialPort 实例打开 COM3”。正确性依赖沿闭锁：电平保持为 1 不得重复占口。异常路径必须 close，否则后续 open 失败。"
+      <Sub id="p18-4" title="18.4 核心测试控制流程">
+        <p>
+          软件的主控制流程以实时循环为核心：开始测试后读取阈值和次数参数，初始化控制寄存器并进入后台采集线程；随后持续读取
+          PLC/IO 状态，根据状态触发电阻或电流采集，执行速度估计、阈值判断和超时判断；若发生异常，则通过 0x06
+          功能码写入控制寄存器实施联锁停机，同时记录故障；若未达到终止条件，则继续下一轮循环。
+        </p>
+        <PaperImg
+          src="/figures/fig2-control-flow.png"
+          no="18-2"
+          title="核心测试控制算法流程图（论文图 2）"
         />
-        <Algo
-          no="18-4"
-          title="上升沿闭锁"
-          inputs="当前电平 s∈{0,1}，旗标 f（AtomicBoolean），可选时间基 t_last。"
-          outputs="本周期是否允许进入处理分支。"
-          source="processed2（电阻）、processed555111（电流）、processedjishi1（速度）；左右超时另用 processed111000 等。"
-          steps={[
-            "若 s=1 且 ¬f：视为上升沿，置 f←true，执行恰好一次处理（读表或积分速度）。",
-            "若 s=1 且 f：保持闭锁，不处理。",
-            "若 s=0：f←false，允许下一上升沿；超时分支在灭灯期间累计 Δt。",
+        <p>
+          初始化后进入 0x04 轮询；X1 支路测电阻并做 Rmax / 12 s 诊断，X2 支路测电流并做 2.1 A / 12 s
+          诊断；异常走联锁停机并写入 policetime，正常走次数比较与增量保存。
+        </p>
+      </Sub>
+
+      <Sub id="p18-5" title="18.5 模块输入—处理—输出关系">
+        <p className="text-sm font-semibold text-slate-900">
+          表 3　软件模块输入、处理与输出关系
+        </p>
+        <KvTable
+          rows={[
+            {
+              k: "参数管理",
+              v: "输入编号、日期、Rmax、目标次数。处理：合法性校验、参数读取/回显。输出测试配置、界面状态。",
+            },
+            {
+              k: "PLC/IO 通信",
+              v: "输入设备地址、寄存器地址。处理：Modbus 0x04 轮询、CRC16。输出 value、value2。",
+            },
+            {
+              k: "电阻采集",
+              v: "输入有效动作触发。处理：读取 R1/R2/R3 并解析。输出三路接触电阻。",
+            },
+            {
+              k: "电流采集",
+              v: "输入第二状态触发。处理：读取电流并解析。输出工作电流 I。",
+            },
+            {
+              k: "速度计算",
+              v: "输入相邻触发时刻。处理：Δt 与 120/Δt。输出速度/频率估计值。",
+            },
+            {
+              k: "故障诊断",
+              v: "输入 R1/R2/R3/I/状态持续时间。处理：阈值判定、超时判定。输出正常/故障类型。",
+            },
+            {
+              k: "联锁控制",
+              v: "输入故障类型/终止条件。处理：Modbus 0x06 写寄存器。输出停机、报警。",
+            },
+            {
+              k: "实时可视化",
+              v: "输入 R1/R2/R3/I、采样序号。处理：XYSeries、双 Y 轴、动态窗口。输出实时趋势曲线。",
+            },
+            {
+              k: "数据存储",
+              v: "输入四组 XY 数据、试验信息。处理：批量插入、增量保存。输出 test_results。",
+            },
+            {
+              k: "故障追溯",
+              v: "输入故障原因、次数、时间。处理：PreparedStatement 插入。输出 policetime。",
+            },
+            {
+              k: "历史回放",
+              v: "输入测试编号。处理：SQL 查询、升序恢复 XY 点。输出历史曲线、日期、次数。",
+            },
           ]}
-          complexity="O(1)，无锁争用（单写入线程）。"
-          correctness="把电平语义改造成边沿语义。退出界面必须 resetForNextEnter() 清旗标与时间基，否则下次会跳过整拍或用 (now−0) 造成假超时。"
-        />
-        <Algo
-          no="18-5"
-          title="动作频次估算"
-          inputs="X1 上升沿时刻 t，上一有效沿 t_prev。"
-          outputs="界面速度 v̂（次/分钟）。"
-          source="readAndProcessRegisters() 内：frequency = 120.0 / timeDifference，再 Math.round。"
-          steps={[
-            "仅当 X1 上升沿（算法 18-4）时计算 Δt = (t − t_prev)/1000。",
-            "若 Δt ≤ 2：视为抖动，丢弃，不更新 t_prev。",
-            "否则 v ← 120/Δt，v̂ ← round(v)，invokeLater 写入速度框，t_prev ← t。",
-            "曲线横坐标每点 +2，保存成功后累计次数按新增点数×2 增加，与 120=60×2 共用同一计数约定。",
-          ]}
-          complexity="O(1)。不另开定时器。"
-          correctness="Δt>2 是抗抖动死区，不是奈奎斯特采样定理的应用。系数 120 在源码中是与步进 2 一致的软件约定；缺少机构模型时不得解释为凸轮半周期或传动比。源码注释区曾出现窗口为 5 的滑动平均，现行主路径未启用。"
         />
       </Sub>
 
-      <Sub title="7）保护、对齐与持久化">
-        <Algo
-          no="18-6"
-          title="四类保护判定"
-          inputs="本拍 pureValue1..3、dianliu1Value1、灭灯时长、timeSeconds；阈值 dianzumax、2.1 A、testcount。"
-          outputs="是否停机，以及 policetime 记录。"
-          source="外层循环与凸轮灭灯分支；写寄存器 1（运行）与 2（报警）。"
-          steps={[
-            "电阻：任一路标量 > dianzumax（库表 d_dianzumax，id=1）→ 停机，记“电阻值故障”。",
-            "电流：dianliu1Value1 > 2.1 → 停机，记“电流值故障”。",
-            "机构：X1 或 X2 持续为 0 且 Δt∈(12,10000) → 停机，记左右凸轮转动故障。",
-            "次数：timeSeconds ≥ testcount → 停机，提示已达设定次数。",
-            "处理顺序：先写线圈，再入库，再 continueLoop2←false。判定在循环内部完成，不是试验结束后批处理。",
-          ]}
-          complexity="每拍 O(1) 次比较。"
-          correctness="(12,10000) 同时抑制正常节拍与未初始化时间基。电流阈值硬编码，电阻阈值走库。JOptionPane 在工作线程弹出，会阻塞该循环直至对话框关闭。"
-        />
-        <Algo
-          no="18-7"
-          title="多源采样对齐"
-          inputs="三路电阻显示串、电流隐藏串 dianzu444NO。"
-          outputs="同一横坐标上的四元采样点，或本拍不加点。"
-          source="startListening() 注册的 DocumentListener；只处理 insertUpdate。"
-          steps={[
-            "电流事务只写隐藏框，不触发正式显示。",
-            "电阻事务在 EDT 上将隐藏值抄到 dianzu444，并同时写入三路电阻框。",
-            "当四框均非空：extractNumber 得四路标量，lockYAxisRange，series1/2/3 与 rightSeries 在同一 timeSeconds 各加一点，timeSeconds ← timeSeconds+2。",
-            "加点前对完全相同的重复插入做微量扰动，避免 JFreeChart 叠点。",
-          ]}
-          complexity="加点 O(1)；Y 轴锁定扫描当前最大值，与点数成线性，但每拍只调用一次。"
-          correctness="完整性谓词是“四框非空”，不是“四路都是本毫秒的新 CRC 通过值”。电流实际采自 X2 沿，电阻采自 X1 沿，对齐的是同一机械循环而非同一时刻。"
-        />
-        <Algo
-          no="18-8"
-          title="基于历史采样点索引的增量持久化"
-          inputs="当前 XYSeries，编号 b，内存游标 loadedPointCount，绑定编号 loadedTestBianHao。"
-          outputs="插入行数；成功后更新 allcount 与游标。"
-          source="保存按钮 → isTestBianHaoExists → saveTestResultsBatch。"
-          steps={[
-            "校验编号、次数、曲线点数非空。",
-            "exists ← 库中是否已有 b；append ← exists ∧ b = loadedTestBianHao。",
-            "start ← append ? loadedPointCount : 0。若点数 ≤ start，提示无新增。",
-            "收集 [start, n) 的四系列 X/Y，构造行（日期、编号、次数、8 个坐标）。",
-            "关闭 autoCommit，addBatch 后 executeBatch；成功 commit，失败 rollback。",
-            "成功则 allcount ← allcount + 2·(n−start)，游标推到 n，绑定编号改为 b。",
-          ]}
-          complexity="I/O 与新增点数成线性。回显时暂时关闭 series.notify，批量 add，避免 O(n) 次重绘。"
-          correctness="表结构无游标列，正确性依赖进程内游标与编号绑定。新编号（¬exists）不得清空正在画的曲线；loadingHistory 防止下拉回填递归加载。"
-        />
-        <Algo
-          no="18-9"
-          title="有序序列最近邻查询"
-          inputs="单调递增的 XYSeries，光标映射后的横坐标 x。"
-          outputs="|X_i − x| 最小的数据项；空序列返回 null。"
-          source="findClosestDataItem；ChartMouseListener 用于竖线读数。"
-          steps={[
-            "令 min←+∞，从 i=0 扫描。",
-            "d ← |X_i − x|。若 d < min，更新最近项；否则立即 break。",
-            "利用“数据按 X 有序存储，距离一旦变大即可停止”这一性质提前结束。",
-          ]}
-          complexity="最坏 O(n)，有序提前停止后平均接近目标邻域。点数为寿命试验的采样拍数，可接受。"
-          correctness="提前停止仅当序列对 X 单调。回显按 series1_x 升序加载，正式加点按 timeSeconds 递增，满足该前提。乱序插入会得到错误近邻。"
-        />
+      <Sub id="p18-6" title="18.6 可直接用于论文的系统设计表述">
+        <p>
+          本研究采用 Java 语言开发寿命试验上位机软件，并基于 Swing
+          构建人机交互界面。系统通过 jSerialComm 实现上位机与下位控制器之间的串口通信，在 Modbus RTU
+          协议框架下分别采用 0x04 功能码读取输入寄存器、采用 0x06
+          功能码写单个保持寄存器，实现状态监测与试验机构控制。为提高通信可靠性，软件在请求帧中嵌入 CRC-16/Modbus 校验。
+        </p>
+        <p>
+          在实时测试阶段，软件采用 ExecutorService 将设备轮询与数据采集任务放置于后台线程中执行，并利用
+          AtomicBoolean 对关键状态进行防重复触发控制。系统根据 PLC
+          输入状态选择性采集三路接触电阻和一路电流，结合相邻动作触发时间差计算运行速度。针对寿命试验过程中可能出现的异常，构建了基于接触电阻阈值、电流阈值和动作超时的多条件故障判定策略。当检测到任一路接触电阻超过设定上限、电流超过
+          2.1 A，或关键动作状态持续超过 12
+          s 时，系统立即发送控制指令执行停机和报警，并将故障类型及发生时刻写入数据库。
+        </p>
+        <p>
+          测试数据采用 JFreeChart 进行动态可视化，其中三路接触电阻共用左侧 Y 轴，电流采用独立右侧 Y
+          轴。各通道数据以 XYSeries 形式实时追加，并通过滑动时间窗口实现连续趋势显示。为支持历史试验追溯，软件以测试编号为索引保存曲线数据，并设计增量保存机制：对已加载的历史编号仅保存后续新增数据点，从而避免重复记录。历史记录重新加载后，可恢复原有曲线、测试日期及累计次数，并在历史最大横坐标之后继续绘制，实现寿命试验数据的连续记录。
+        </p>
       </Sub>
 
-      <Sub title="8）4拖1：轮询调度与隔离停机">
-        <Algo
-          no="18-10"
-          title="八从站时分轮询与缓存更新"
-          inputs="COM5 上地址 01～08 的仪表；节拍 100ms。"
-          outputs="ConcurrentHashMap 中的 current_0k / resistance_0k。"
-          source="SixMeterInstrumentReader.startReading / sendNextQuery / processSensorData。"
-          steps={[
-            "若已 running 则直接返回，保证调度器单例。",
-            "打开 COM5，flushIOBuffers，注册唯一 SerialPortDataListener。",
-            "每 100ms：address ← (queryIndex mod 8)+1，queryIndex←queryIndex+1，发送 03H（起始 1、数量 3）。",
-            "监听线程 sleep 80ms 后取当前可用字节；长度 < 9 或 CRC 失败则丢弃，不覆盖旧值。",
-            "按 data[0] 分流：01～04 走电流解析，05～08 走电阻解析，写入对应键。",
-            "工位循环在凸轮沿上只调用 getCurrentValue(i)、getResistanceValue(i+4)，不再 open/close。",
+      <Sub id="p18-7" title="18.7 附录：源码对照与算法命名">
+        <p className="text-sm font-semibold text-slate-900">
+          表 A1　源码类与软件功能模块的对应关系
+        </p>
+        <KvTable
+          rows={[
+            {
+              k: "ZzhejiPanel",
+              v: "主界面/主控制器。界面组件、开始/停止测试、数据采集调度、曲线更新、故障判断、保存/回放。",
+            },
+            {
+              k: "RRuANDWone",
+              v: "PLC/IO 通信层。串口打开/关闭、Modbus 0x04 读取、0x06 写寄存器、CRC16。",
+            },
+            {
+              k: "DianZu00000",
+              v: "接触电阻采集。读取并保存三路电阻值。",
+            },
+            {
+              k: "JiaoL",
+              v: "电流采集。读取工作电流及单位化输出。",
+            },
+            {
+              k: "JdbcDeal",
+              v: "数据库连接/查询。建立连接、执行编号查询等。",
+            },
+            {
+              k: "ExecuteCommon",
+              v: "数据库业务访问。阈值参数读取、累计次数更新、批量保存测试结果。",
+            },
+            {
+              k: "JFreeChart / XYSeries",
+              v: "可视化。实时曲线、多序列、双 Y 轴、历史曲线恢复。",
+            },
+            {
+              k: "ExecutorService / Future",
+              v: "并发执行。后台测试任务、停止时取消任务。",
+            },
+            {
+              k: "AtomicBoolean",
+              v: "状态同步。避免持续高电平重复处理，协调测试状态。",
+            },
+            {
+              k: "DocumentListener",
+              v: "数据驱动刷新。测量框数据变化后触发 XY 序列更新。",
+            },
           ]}
-          complexity="一轮 8×100ms ≈ 800ms。单次解析 O(1)。读缓存对工位循环为 O(1)。"
-          correctness="配对键是帧内地址而不是发送序号，迟到应答不会写入邻站。CRC 失败保留旧缓存，掉线时可能用过期值做超限比较。COM5 不得再被 RRu/Wone 打开。"
         />
-        <Algo
-          no="18-11"
-          title="工位级隔离停机"
-          inputs="工位 i 的本拍测量、本工位阈值、共享 PLC 对象。"
-          outputs="仅工位 i 停止；邻站 Future 继续。"
-          source="ZzhejiPanel-20260811 各 beginCLBtn i；readAndProcessRegisters 为 synchronized。"
-          steps={[
-            "四个循环调用同一 synchronized 方法读 8 个输入字，COM4 访问串行化。",
-            "工位 i 只解释属于自己的凸轮字，只读自己的仪表键。",
-            "超限或超时：交错写寄存器 5（报警）与寄存器 i（运行=1），灯改 N，isTestingStarted i←false，cancel Future i。",
-            "不调用 instrumentReader.stopReading()。入库带 Shebeihao=i，查重走分设备方法。",
-          ]}
-          complexity="停机路径 O(1) 次写寄存器。读 PLC 的临界区长度等于一次 8 字事务加四路速度积分。"
-          correctness="机构隔离成立的前提是运行线圈按工位号切开。报警线圈 5 仍共享，工位 i 清 0 可能抹掉工位 j 的报警。Java synchronized 保证的是监视器互斥，不是 PLC 事务原子性。"
-        />
+        <Callout title="附录 B　论文撰写时的算法命名建议" tone="idea">
+          为保证论文表述与源码一致，建议将本系统中的算法称为「实时测控与故障诊断算法」「基于状态触发的速度估计算法」「基于阈值与时间窗口的故障判定算法」「Modbus
+          RTU 报文校验算法」「历史曲线增量存储算法」。当前源码并未体现机器学习、神经网络、模糊控制、PID
+          自适应控制等算法，因此论文中不建议写入这些未实际实现的技术，以免答辩或审稿时出现源码与文字不一致。
+        </Callout>
       </Sub>
 
-      <Callout title="算法在闭环中的位置" tone="idea">
-        算法 18-2、18-3 保证“进入系统的数是完整且可还原的”；18-1、18-4、18-7
-        保证“这些数属于同一机械循环且不被重复处理”；18-5、18-6
-        把循环映射为速度与停机决策；18-8、18-9
-        解决续测与交互读数；18-10、18-11
-        在两路半双工介质上把上述闭环复制为四套可独立停机的实例。模块框图给出结构，算法给出不变式。
-      </Callout>
+      <Sub id="p18-8" title="18.8 4 拖 1 拓展版源码中的补充算法">
+        <p>
+          下列算法只存在于 <code>SixMeterInstrumentReader</code> 与{" "}
+          <code>ZzhejiPanel-20260811</code>
+          ，不出现在论文图 1、图 2 的基础版框图中。答辩时若被问到四工位，用本节；写基础版论文时不要把它们写进 18.1–18.6。
+        </p>
+        <Algo
+          no="18-D"
+          title="八仪表时分复用轮询"
+          inputs="COM5 上从站 01–08"
+          outputs="ConcurrentHashMap 中的最新电流/电阻"
+          source="SixMeterInstrumentReader.run / readCurrentValue / readResistanceValue"
+          steps={[
+            "独立线程每 100 ms 启动一轮。",
+            "顺序读 01–04 电流、05–08 电阻；每帧后 listener 等待约 80 ms。",
+            "合法响应写入 ConcurrentHashMap；工位循环只读缓存，不再开仪表串口。",
+          ]}
+          complexity="一轮约 800 ms，受串口等待主导。"
+          correctness="单口互斥由轮询线程独占；工位线程不争用 COM5。"
+        />
+        <Algo
+          no="18-E"
+          title="八字输入寄存器同步快照"
+          inputs="COM4、PLC 地址 0x01、功能码 0x04、数量 8"
+          outputs="8 个工位凸轮字的一致快照"
+          source="ZzhejiPanel-20260811.readAndProcessRegisters"
+          steps={[
+            "方法加 synchronized，同时只允许一拍读。",
+            "一次读回 8 个输入字，再按工位切开。",
+            "各工位用本站 AtomicBoolean 做边沿闩锁。",
+          ]}
+          complexity="O(1) 次事务 / 拍。"
+          correctness="同步保证四站看到同一拍快照，避免半新半旧。"
+        />
+        <Algo
+          no="18-F"
+          title="分站 Future 独立启停"
+          inputs="工位 i 的开始/停止命令"
+          outputs="仅工位 i 的测试任务生命周期"
+          source="ZzhejiPanel-20260811 四套 executor / Future / isTestingStarted"
+          steps={[
+            "每站独立线程池与 Future。",
+            "开始：置本站 isTestingStarted，提交本站循环。",
+            "停止：cancel 本站 Future，写本站运行寄存器为 0；其他站不受影响。",
+          ]}
+          complexity="O(1) / 站。"
+          correctness="启停键绑定本站 Future，不共享单一 running 标志。"
+        />
+      </Sub>
     </Section>
   );
 }

@@ -173,6 +173,45 @@ export function Flow({ steps }: { steps: string[] }) {
   );
 }
 
+export function PaperImg({
+  src,
+  no,
+  title,
+}: {
+  src: string;
+  no: string;
+  title: string;
+}) {
+  return (
+    <figure className="my-5 break-inside-avoid rounded-xl border border-slate-200 bg-white px-2 py-3 md:px-4">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={`图${no} ${title}`}
+        className="mx-auto max-h-[44rem] w-full object-contain"
+      />
+      <figcaption className="mt-3 text-center text-[13.5px] font-semibold tracking-wide text-slate-800">
+        图{no}　{title}
+      </figcaption>
+    </figure>
+  );
+}
+
+export function Formula({
+  no,
+  children,
+}: {
+  no: string;
+  children: ReactNode;
+}) {
+  return (
+    <p className="my-3 text-center font-serif text-[15.5px] leading-8 text-slate-800">
+      {children}
+      <span className="ml-6 text-sm text-slate-500">({no})</span>
+    </p>
+  );
+}
+
 export function Algo({
   no,
   title,
