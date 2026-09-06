@@ -107,6 +107,13 @@ export function ReportApp() {
       </p>
       <div className="mt-4 flex flex-col gap-2">
         <a
+          href="/md.html"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-sidebar-primary hover:underline"
+          onClick={() => setOpen(false)}
+        >
+          手机阅读 Markdown
+        </a>
+        <a
           href="/word"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-sidebar-primary hover:underline"
           onClick={() => setOpen(false)}
@@ -217,6 +224,9 @@ export function ReportApp() {
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button asChild>
+                <a href="/md.html">手机阅读 Markdown</a>
+              </Button>
+              <Button variant="outline" asChild>
                 <a href="/word">
                   <FileDown className="h-4 w-4" />
                   下载 Word
@@ -228,6 +238,17 @@ export function ReportApp() {
                   打开打印稿
                 </Link>
               </Button>
+            </div>
+            <div className="mt-5 hidden items-center gap-4 rounded-xl border border-border bg-white p-3 sm:flex">
+              <img
+                src="/qr-phone.png"
+                alt="手机扫码阅读报告"
+                className="h-28 w-28 rounded-md border border-border bg-white"
+              />
+              <div className="text-sm leading-7 text-slate-600">
+                <p className="font-medium text-slate-900">手机扫码阅读</p>
+                <p>用相机或微信扫码，打开 Markdown 阅读版。建议在 Safari / Chrome 中打开；微信里若打不开，点右上角选“用浏览器打开”。</p>
+              </div>
             </div>
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4">
               <p className="text-sm font-semibold text-amber-950">摘要</p>
