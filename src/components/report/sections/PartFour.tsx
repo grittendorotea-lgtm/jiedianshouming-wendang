@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Callout, CodeBlock, KvTable, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, KvTable, QAList, Section, Sub } from "../blocks";
 import { Figure, SeqTable } from "../flowchart";
 
 export function PartFour() {
@@ -137,6 +137,31 @@ for (int j = 0; j < length; j++) {
             12.34 mΩ。主界面 <code>extractNumber()</code> 去掉单位后再和阈值比较。
           </p>
         </Sub>
+        <QAList
+          items={[
+            {
+              q: "总线上夹杂干扰时，错误读数会不会拿去比阈值、画进寿命曲线？",
+              a: (
+                <>
+                  请求和应答都算 Modbus CRC-16（初值 0xFFFF，多项式 0xA001）。长度不够或校验失败直接丢弃，不进入{" "}
+                  <code>pureValue</code> 和 <code>series.add</code>
+                  。PLC 应答功能码不是 04H 就延时 10ms 重问，避免把半包当凸轮沿。
+                </>
+              ),
+            },
+            {
+              q: "一拍里 PLC、三块电阻表、电流表怎样排队，才不会抢同一把 COM3？",
+              a: (
+                <>
+                  平时 PLC 用 08 04 读两路输入。X1 到位后关口，再按地址
+                  2、3、4 各发一帧 03H；交还后再盯 X2，到位后发 01 03
+                  读电流。半双工上必须排队，不能并发。图 13-1
+                  把这一拍时序写全了。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
 
       <Section id="classes" kicker="第十四节" title="软件结构">
@@ -292,6 +317,23 @@ for (int j = 0; j < length; j++) {
             ]}
           />
         </Sub>
+        <QAList
+          items={[
+            {
+              q: "退出后再进试验页，会不会沿用上次的线程、沿标志或串口占用？",
+              a: (
+                <>
+                  “退出”先走 <code>resetForNextEnter()</code>：停
+                  Timer、取消 Future、移除文本监听、关串口、复位{" "}
+                  <code>AtomicBoolean</code>{" "}
+                  和时间变量，再回 Home。否则下一次会误判凸轮超时，或打不开
+                  COM3。界面更新必须回 EDT，采集在 3 线程池，电流监听在串口回调线程，三类线程不能混着改
+                  Swing 控件。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
 
       <Section
@@ -412,6 +454,20 @@ for (int j = 0; j < length; j++) {
             <li>界面为 1620×950 绝对布局。</li>
           </ul>
         </Sub>
+        <QAList
+          items={[
+            {
+              q: "基础版和 4 拖 1 各自最难的一句，答辩时怎么收口？",
+              a: (
+                <>
+                  基础版：一把 COM3 上用凸轮状态把电阻和电流对齐。4 拖
+                  1：两把口上把问表和用数拆开，让四套状态机独立启停。第 17
+                  节按问—答把调度、沿闭锁、增量存盘和分设备台账集中写了。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
     </>
   );

@@ -72,6 +72,38 @@ export function CodeBlock({
   );
 }
 
+export function QA({ q, a }: { q: string; a: ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-amber-200/80 bg-white">
+      <p className="bg-amber-50 px-4 py-2.5 text-[14.5px] font-semibold leading-7 text-slate-900">
+        <span className="mr-2 text-amber-800">问</span>
+        {q}
+      </p>
+      <div className="px-4 py-3 text-[14.5px] leading-7 text-slate-700">
+        <span className="mr-2 font-semibold text-emerald-800">答</span>
+        {a}
+      </div>
+    </div>
+  );
+}
+
+export function QAList({
+  title = "难点与代码解答",
+  items,
+}: {
+  title?: string;
+  items: { q: string; a: ReactNode }[];
+}) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
+      {items.map((item) => (
+        <QA key={item.q} q={item.q} a={item.a} />
+      ))}
+    </div>
+  );
+}
+
 export function Callout({
   title,
   children,

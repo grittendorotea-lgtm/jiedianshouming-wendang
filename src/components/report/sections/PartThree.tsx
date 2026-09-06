@@ -1,4 +1,4 @@
-import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, Flow, KvTable, QAList, Section, Sub } from "../blocks";
 import {
   ArrowDown,
   ChartNode,
@@ -160,6 +160,36 @@ export function PartThree() {
             用的是 <code>JdbcDeal.getConnection()</code>，和曲线保存走同一套连接工具。
           </p>
         </Sub>
+        <QAList
+          items={[
+            {
+              q: "刚进界面、计时器还没初始化时，会不会立刻误报凸轮超时？",
+              a: (
+                <>
+                  超时窗口写成 (12, 10000)
+                  秒：正常节拍远小于 12 秒才会卡死报警，上限 10000
+                  是为了躲开计时器未赋值时那一跳巨大时间差。左右凸轮各用{" "}
+                  <code>lastTime111000</code>、
+                  <code>lastTime555111</code>，互不影响。
+                </>
+              ),
+            },
+            {
+              q: "电阻、电流、次数、凸轮四类保护触发后，怎样保证设备真停、还能追溯？",
+              a: (
+                <>
+                  外循环实时比较：任一路 <code>pureValue</code> &gt;{" "}
+                  <code>dianzumax</code>，或电流 &gt; 2.1 A，或{" "}
+                  <code>timeSeconds ≥ testcount</code>
+                  ，立刻打开 PLC 口，寄存器 1 写 1 停机、寄存器 2 写 1
+                  报警，<code>continueLoop2 = false</code>。凸轮超时走同一套写口。故障再{" "}
+                  <code>saveToPolicetimeTable</code>{" "}
+                  记次数、原文和时间。这不是测完再判合格，而是每拍闭环。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
 
       <Section
@@ -235,6 +265,23 @@ export function PartThree() {
             ]}
           />
         </Sub>
+        <QAList
+          items={[
+            {
+              q: "电阻是 mΩ、电流是 A，怎样画在一张图上还不提前画出半拍数据？",
+              a: (
+                <>
+                  左轴挂三路电阻，右轴挂电流。采集线程不直接{" "}
+                  <code>series.add</code>，只改四个文本框；{" "}
+                  <code>DocumentListener</code>{" "}
+                  等到三阻一电都非空，才在同一{" "}
+                  <code>timeSeconds</code>{" "}
+                  加点，然后横坐标 +2。变量名叫 timeSeconds，实际是次数，不宜当成时钟秒。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
 
       <Section
@@ -346,6 +393,31 @@ int rowsInserted = ExecuteCommon.saveTestResultsBatch(dataToInsert);`}</CodeBloc
             标志很重要：刷新下拉框或回填编号时会再触发 ActionListener，有了这个标志就不会递归加载、把曲线清掉。
           </p>
         </Sub>
+        <QAList
+          items={[
+            {
+              q: "同一试品分段试验，怎样避免把已经回显的旧点再插一遍？",
+              a: (
+                <>
+                  回显时记下 <code>loadedPointCount</code> 和{" "}
+                  <code>loadedTestBianHao</code>
+                  。保存时只有“编号已存在且等于当前回显编号”才从该索引追加；否则从第
+                  0 点全量写。批插关自动提交，失败 rollback。这是基于历史采样点索引的增量存储。
+                </>
+              ),
+            },
+            {
+              q: "操作员误选新编号，会不会把正在画的曲线清空？回显时会不会递归加载？",
+              a: (
+                <>
+                  库里没有的编号直接 return，绝不清空当前曲线。回填下拉框时先置{" "}
+                  <code>loadingHistory</code>
+                  ，避免 ActionListener 再次触发把刚加载的点清掉。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
 
       <Section
@@ -436,6 +508,24 @@ int rowsInserted = ExecuteCommon.saveTestResultsBatch(dataToInsert);`}</CodeBloc
           ，曲线批插走 <code>JdbcDeal.getConnection()</code>
           。功能上都能用，报告里可以写成“数据访问存在两套连接入口，后续可统一到一个连接池”。
         </Callout>
+        <QAList
+          items={[
+            {
+              q: "阈值、曲线、故障分别怎么落库，两套连接会不会把一次保存写丢一半？",
+              a: (
+                <>
+                  <code>d_dianzumax</code>、<code>allcount</code> 走{" "}
+                  <code>DBConnection</code>；<code>test_results</code>{" "}
+                  批插和 <code>policetime</code> 走{" "}
+                  <code>JdbcDeal</code>
+                  。曲线写入关自动提交，成功才 commit。参数一律{" "}
+                  <code>?</code>{" "}
+                  绑定。功能上能跑通，但两套入口是后续该收成一个连接池的点。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
     </>
   );

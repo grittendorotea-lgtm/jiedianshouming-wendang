@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, Flow, KvTable, QAList, Section, Sub } from "../blocks";
 import {
   ArrowDown,
   ChartNode,
@@ -275,6 +275,56 @@ dianliu1Value1 = instrumentReader.getCurrentValue(1);`}</CodeBlock>
           能成立，前提是 COM5 只属于读取器。
         </Callout>
       </Sub>
+      <QAList
+        title="难点与代码解答"
+        items={[
+          {
+            q: "现场只有 COM4、COM5 两个串口，四组设备却要能单独启动和停止，代码怎么做？",
+            a: (
+              <>
+                不按“一台设备一把口”去扩。COM4 专给 PLC，COM5 专给八台仪表。构造时{" "}
+                <code>SixMeterInstrumentReader.startReading()</code>{" "}
+                就在后台每 100ms 轮询地址 01～08，结果写入{" "}
+                <code>ConcurrentHashMap</code>
+                。四个工位凸轮到位后只{" "}
+                <code>getResistanceValue(5～8)</code>、
+                <code>getCurrentValue(1～4)</code>
+                ，不再 open/close 仪表口。启停写 PLC 寄存器 1～4：开始写
+                0，停止或故障写 1。每台有自己的{" "}
+                <code>isTestingStarted1～4</code>{" "}
+                和独立线程池，一台 <code>cancel</code>{" "}
+                只停本工位 Future。报警共用寄存器 5，故障入库带{" "}
+                <code>Shebeihao</code>
+                。邻站继续转。第 17 节用图 17-1 把这条再拆开讲了。
+              </>
+            ),
+          },
+          {
+            q: "四个试验循环同时跑，会不会一起打开 COM4，或把邻站的表值读串？",
+            a: (
+              <>
+                四个循环都走同一个{" "}
+                <code>synchronized readAndProcessRegisters()</code>
+                ，PLC 访问被串行化，一次读 8 个输入字给四工位用。仪表侧查询线程每
+                100ms 只问一台，解析先看 <code>data[0]</code>{" "}
+                分流；工位 1 固定取 05/01，不会误用邻站缓存。
+              </>
+            ),
+          },
+          {
+            q: "工位 2 电阻超限，会不会把工位 1、3、4 一起停掉？",
+            a: (
+              <>
+                不会。保护只比较本工位缓存和本工位{" "}
+                <code>getDianzumaxValue2()</code>
+                ，然后写寄存器 2 停本台、写寄存器 5 报警，灯改 N，停{" "}
+                <code>isTestingStarted2</code>
+                。其他工位的 Future 继续跑。保存和查重也按设备号切开。
+              </>
+            ),
+          },
+        ]}
+      />
     </Section>
   );
 }

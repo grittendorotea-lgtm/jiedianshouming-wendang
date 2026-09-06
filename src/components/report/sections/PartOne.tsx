@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, Flow, KvTable, QAList, Section, Sub } from "../blocks";
 import { ArrowDown, ChartNode, Figure, LayerStack, VChart } from "../flowchart";
 
 export function PartOne() {
@@ -40,6 +40,20 @@ export function PartOne() {
           本系统既是数据采集系统，也是设备安全控制与质量监测系统。核心不是单独画图，而是以
           PLC 状态驱动测试时序，把三路微欧电阻和一路电流对齐到同一次机械动作上，并形成“采集—判定—控制”闭环。
         </Callout>
+        <QAList
+          items={[
+            {
+              q: "这套软件最难的地方是画寿命曲线，还是把采集和控制对齐？",
+              a: (
+                <>
+                  曲线只是结果。真正难的是用 PLC 两个输入字识别机械阶段，在对应到位瞬间分时读三路电阻和一路电流，再立刻拿去比阈值、决定停机。基础版挤在一把
+                  COM3 上完成这件事；4 拖 1 则要在两把口上让四组设备各自启停。第 17
+                  节把这类题集中答了一遍。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
 
       <Section id="arch" kicker="第二节" title="总体架构">
@@ -138,6 +152,21 @@ export function PartOne() {
             Java 串口对象打开，因此必须“先关 PLC 口，再打开仪表口，读完立刻归还”。任何异常路径如果未及时释放端口，下一模块可能因
             COM3 被占用而无法通信。后续可设计统一 SerialPortManager 集中调度。
           </p>
+          <QAList
+            items={[
+              {
+                q: "为什么不给 PLC、电阻仪、电流表各开一个串口，而要挤在 COM3 上？",
+                a: (
+                  <>
+                    基础版现场就是一把 RS-485。三个 Java 对象都写死{" "}
+                    <code>getCommPort(&quot;COM3&quot;)</code>
+                    ，Windows 下不能同时打开。代码用“先 close 再 open”做时分复用：平时
+                    PLC 占口读 X1/X2，到位后再把口交给仪表，读完立刻归还。这是稳定性关键风险：异常路径若没关口，下一模块会打不开。
+                  </>
+                ),
+              },
+            ]}
+          />
           <Figure no="2-2" title="COM3 分时复用流程">
             <VChart>
               <ChartNode kind="start">PLC 占用 COM3，循环读 X1/X2</ChartNode>
@@ -228,6 +257,20 @@ export function PartOne() {
             </tbody>
           </table>
         </div>
+        <QAList
+          items={[
+            {
+              q: "十个模块里，答辩时该抓住哪几条，而不是逐个讲按钮？",
+              a: (
+                <>
+                  三条主线：状态驱动自动测试、多源参数对齐监测、安全联锁与数据追溯。第
+                  4～14 节和第 16 节末尾都有“问—答”式难点；第 17
+                  节把“两串口拖四组独立设备”等题再归纳一遍。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
 
       <Section
@@ -330,6 +373,34 @@ export function PartOne() {
           也只返回这个字段。三路读完后，单位会变成最后一路的单位。如果三块表量程单位一致（都是
           mΩ），现场看不出来；写报告时可以提一句“当前实现默认三路单位相同”。
         </Callout>
+        <QAList
+          items={[
+            {
+              q: "三块电阻表共线，怎样保证问 2 的时候不会把 3、4 的应答写进电阻 1？",
+              a: (
+                <>
+                  <code>readAndStoreValues()</code> 按地址 2、3、4
+                  串行发 03H 帧，每问一路等约 50ms 再收。解析后用{" "}
+                  <code>switch (address)</code> 写入{" "}
+                  <code>dianZValue1/2/3</code>
+                  。CRC 失败返回 0，不覆盖为邻站值。半双工上必须排队，不能三路并发。
+                </>
+              ),
+            },
+            {
+              q: "原始整数怎样变成 12.34 mΩ，又怎样拿去和阈值比较？",
+              a: (
+                <>
+                  <code>rawValue = (data[3]&lt;&lt;8)|data[4]</code>，再除以{" "}
+                  <code>10^data[6]</code>，<code>data[8]</code> 决定
+                  mΩ/Ω/kΩ。界面显示带单位字符串，主界面{" "}
+                  <code>extractNumber()</code> 抠出{" "}
+                  <code>pureValue</code> 再和 <code>dianzumax</code> 比。
+                </>
+              ),
+            },
+          ]}
+        />
       </Section>
     </>
   );

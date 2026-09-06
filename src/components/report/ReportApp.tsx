@@ -12,6 +12,7 @@ import { navItems } from "./nav-items";
 import { PartFive } from "./sections/PartFive";
 import { PartFour } from "./sections/PartFour";
 import { PartOne } from "./sections/PartOne";
+import { PartSix } from "./sections/PartSix";
 import { PartThree } from "./sections/PartThree";
 import { PartTwo } from "./sections/PartTwo";
 
@@ -90,7 +91,7 @@ export function ReportApp() {
         寿命测试软件
       </h1>
       <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
-        前十五节为基础实现，第十六节为 4 拖 1 方案。点目录即可跳转。
+        前十五节为基础实现，第十六节为 4 拖 1，第十七节归纳难点问—答。点目录即可跳转。
       </p>
       <Link
         href="/print"
@@ -139,7 +140,7 @@ export function ReportApp() {
           />
           <aside className="relative flex h-full w-[min(20rem,86vw)] flex-col bg-sidebar shadow-2xl">
             <div className="flex items-center justify-between px-4 pt-4">
-              <p className="text-sm text-sidebar-foreground/80">十六节目录</p>
+              <p className="text-sm text-sidebar-foreground/80">十七节目录</p>
               <Button
                 variant="ghost"
                 size="icon"
@@ -184,8 +185,8 @@ export function ReportApp() {
               功能实现与关键技术分析
             </p>
             <p className="mt-4 text-[16px] leading-8 text-slate-600">
-              对照源码整理。前十五节写基础版功能实现与关键技术，第十六节单独写 4
-              拖 1 多工位方案，并配分层流程图。
+              对照源码整理。前十五节写基础版功能实现与关键技术，第十六节单独写
+              4 拖 1 多工位方案，第十七节归纳难点与代码解答。各功能节末尾都有问—答。
             </p>
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4">
               <p className="text-sm font-semibold text-amber-950">摘要</p>
@@ -207,6 +208,7 @@ export function ReportApp() {
             <PartThree />
             <PartFour />
             <PartFive />
+            <PartSix />
           </div>
 
           <div className="mx-auto mt-10 flex max-w-3xl items-center justify-between gap-3 lg:hidden">
@@ -235,7 +237,7 @@ export function ReportApp() {
           </div>
 
           <footer className="mt-16 max-w-3xl border-t border-border pt-6 text-sm text-slate-500">
-            前十五节分析范围：ZzhejiPanel.java、DianZu00000.java、JiaoL.java、ExecuteCommon.java。第十六节另据{" "}
+            前十五节分析范围：ZzhejiPanel.java、DianZu00000.java、JiaoL.java、ExecuteCommon.java。第十六、十七节另据{" "}
             <code>SixMeterInstrumentReader.java</code>、
             <code>ZzhejiPanel-20260811.java</code>
             。PLC 读写类 RRuANDWone 未包含在这批文件中，其行为根据主界面调用还原。

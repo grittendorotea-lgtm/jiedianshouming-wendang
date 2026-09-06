@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PartFive } from "@/components/report/sections/PartFive";
 import { PartFour } from "@/components/report/sections/PartFour";
 import { PartOne } from "@/components/report/sections/PartOne";
+import { PartSix } from "@/components/report/sections/PartSix";
 import { PartThree } from "@/components/report/sections/PartThree";
 import { PartTwo } from "@/components/report/sections/PartTwo";
 
@@ -27,7 +28,7 @@ export default function PrintPage() {
       <p className="mt-1 text-lg text-slate-700">功能实现与关键技术分析</p>
       <p className="mt-4 leading-8 text-slate-600">
         前十五节写基础版功能与关键技术，第十六节单独写 4 拖 1
-        方案。浏览器打印即可导出 PDF。
+        方案，第十七节归纳难点与代码解答。浏览器打印即可导出 PDF。
       </p>
       <div className="mt-10 space-y-14">
         <PartOne />
@@ -35,6 +36,7 @@ export default function PrintPage() {
         <PartThree />
         <PartFour />
         <PartFive />
+        <PartSix />
       </div>
     </article>
   );
