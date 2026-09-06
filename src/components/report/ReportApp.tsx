@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Menu, Printer, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, List, Printer, X } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,21 @@ export function ReportApp() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  const activeIndex = navItems.findIndex((item) => item.id === active);
+  const current = navItems[activeIndex] ?? navItems[0];
+  const prev = activeIndex > 0 ? navItems[activeIndex - 1] : null;
+  const next =
+    activeIndex >= 0 && activeIndex < navItems.length - 1
+      ? navItems[activeIndex + 1]
+      : null;
+
   const nav = (
     <nav className="space-y-1">
       {navItems.map((item) => (
@@ -51,7 +66,7 @@ export function ReportApp() {
           href={`#${item.id}`}
           onClick={() => setOpen(false)}
           className={cn(
-            "block rounded-md px-3 py-2 text-[13px] leading-6 transition-colors",
+            "block rounded-md px-3 py-2.5 text-[14px] leading-6 transition-colors",
             active === item.id
               ? "bg-sidebar-accent text-sidebar-primary"
               : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground"
@@ -63,58 +78,100 @@ export function ReportApp() {
     </nav>
   );
 
+  const sidebarHead = (
+    <div className="px-5 pb-3 pt-6">
+      <p className="text-[11px] font-semibold tracking-[0.2em] text-sidebar-primary">
+        课题报告
+      </p>
+      <h1 className="mt-2 text-lg font-semibold leading-7 text-sidebar-foreground">
+        接点接触电阻
+        <br />
+        在线监测系统
+      </h1>
+      <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
+        功能实现分析，共十五节。点目录即可跳转。
+      </p>
+      <Link
+        href="/print"
+        className="mt-4 inline-flex items-center gap-1.5 text-xs text-sidebar-primary hover:underline"
+        onClick={() => setOpen(false)}
+      >
+        <Printer className="h-3.5 w-3.5" />
+        打开打印稿
+      </Link>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
-        <div>
-          <p className="text-xs text-amber-800">课题报告</p>
-          <p className="font-semibold text-slate-900">接点接触电阻监测系统</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" asChild>
-            <Link href="/print" aria-label="打开打印稿">
-              <Printer className="h-4 w-4" />
-            </Link>
-          </Button>
-        <Button variant="outline" size="icon" onClick={() => setOpen((v) => !v)}>
-          {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </Button>
+      <div className="lg:hidden sticky top-0 z-30 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs text-amber-800">课题报告 · 点目录跳转</p>
+            <p className="truncate font-semibold text-slate-900">{current.label}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/print" aria-label="打开打印稿">
+                <Printer className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              variant="default"
+              className="px-3"
+              onClick={() => setOpen(true)}
+            >
+              <List className="h-4 w-4" />
+              目录
+            </Button>
+          </div>
         </div>
       </div>
 
       {open ? (
-        <div className="lg:hidden border-b border-border bg-sidebar px-3 py-4">
-          {nav}
+        <div className="lg:hidden fixed inset-0 z-50">
+          <button
+            type="button"
+            className="absolute inset-0 bg-slate-900/50"
+            aria-label="关闭目录"
+            onClick={() => setOpen(false)}
+          />
+          <aside className="relative flex h-full w-[min(20rem,86vw)] flex-col bg-sidebar shadow-2xl">
+            <div className="flex items-center justify-between px-4 pt-4">
+              <p className="text-sm text-sidebar-foreground/80">十五节目录</p>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-sidebar-foreground hover:bg-sidebar-accent"
+                onClick={() => setOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            {sidebarHead}
+            <Separator className="bg-sidebar-border" />
+            <ScrollArea className="flex-1 px-3 py-4">{nav}</ScrollArea>
+          </aside>
         </div>
       ) : null}
 
+      <button
+        type="button"
+        className="lg:hidden fixed bottom-5 right-4 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-lg"
+        onClick={() => setOpen(true)}
+      >
+        <List className="h-4 w-4" />
+        目录
+      </button>
+
       <div className="mx-auto flex max-w-7xl">
         <aside className="sticky top-0 hidden h-screen w-72 shrink-0 bg-sidebar lg:block">
-          <div className="px-5 pb-3 pt-6">
-            <p className="text-[11px] font-semibold tracking-[0.2em] text-sidebar-primary">
-              课题报告
-            </p>
-            <h1 className="mt-2 text-lg font-semibold leading-7 text-sidebar-foreground">
-              接点接触电阻
-              <br />
-              在线监测系统
-            </h1>
-            <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
-              功能实现分析，共十五节。
-            </p>
-            <Link
-              href="/print"
-              className="mt-4 inline-flex items-center gap-1.5 text-xs text-sidebar-primary hover:underline"
-            >
-              <Printer className="h-3.5 w-3.5" />
-              打开打印稿
-            </Link>
-          </div>
+          {sidebarHead}
           <Separator className="bg-sidebar-border" />
           <ScrollArea className="h-[calc(100vh-210px)] px-3 py-4">{nav}</ScrollArea>
         </aside>
 
-        <main className="min-w-0 flex-1 px-4 py-8 md:px-10 md:py-12">
+        <main className="min-w-0 flex-1 px-4 py-8 pb-28 md:px-10 md:py-12 lg:pb-12">
           <header className="mb-10 max-w-3xl">
             <p className="text-sm font-medium text-amber-800">
               软件工程课题 · 功能实现分析
@@ -134,6 +191,31 @@ export function ReportApp() {
             <PartTwo />
             <PartThree />
             <PartFour />
+          </div>
+
+          <div className="mx-auto mt-10 flex max-w-3xl items-center justify-between gap-3 lg:hidden">
+            {prev ? (
+              <a
+                href={`#${prev.id}`}
+                className="flex min-w-0 flex-1 items-center gap-1 rounded-lg border border-border bg-white px-3 py-3 text-sm text-slate-700"
+              >
+                <ChevronLeft className="h-4 w-4 shrink-0" />
+                <span className="truncate">{prev.label}</span>
+              </a>
+            ) : (
+              <span />
+            )}
+            {next ? (
+              <a
+                href={`#${next.id}`}
+                className="flex min-w-0 flex-1 items-center justify-end gap-1 rounded-lg border border-border bg-white px-3 py-3 text-sm text-slate-700"
+              >
+                <span className="truncate">{next.label}</span>
+                <ChevronRight className="h-4 w-4 shrink-0" />
+              </a>
+            ) : (
+              <span />
+            )}
           </div>
 
           <footer className="mt-16 max-w-3xl border-t border-border pt-6 text-sm text-slate-500">
