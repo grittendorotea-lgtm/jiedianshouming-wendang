@@ -3,7 +3,7 @@ import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
 export function PartTwo() {
   return (
     <>
-      <Section id="i-collect" kicker="F2 · JiaoL" title="电流采集是怎么实现的">
+      <Section id="i-collect" kicker="第五节" title="电流采集">
         <p>
           类 <code>com.ytzg.sealer.plc.JiaoL</code>{" "}
           读的是电流表，不是电阻。命名来自“角/铰/绞”现场叫法或电流回路，界面标签写的是“电流”，单位是
@@ -47,17 +47,17 @@ comPort.writeBytes(request, request.length);`}</CodeBlock>
             <code>dianliu1Value1</code>，再和 2.1A 比较。
           </p>
         </Sub>
-        <Callout title="和电阻采集的对照，写报告很好用" tone="note">
-          电阻：同步、三从站、单位 mΩ/Ω/kΩ。电流：异步监听、单从站地址
-          1、单位 mA/A。两者都走 COM3、9600、功能码
-          0x03、同一套 CRC。上位机用“先关 PLC 口再打开仪表口”把它们串进同一条测试节拍。
+        <Callout title="与电阻采集的差异" tone="note">
+          电阻采集为同步轮询、三从站、单位 mΩ/Ω/kΩ；电流采集为异步监听、单从站地址
+          1、单位 mA/A。二者共用 COM3、9600、功能码 0x03 及同一 CRC
+          算法，并由上位机在关闭 PLC 通道后依次访问。
         </Callout>
       </Section>
 
       <Section
         id="plc"
-        kicker="F3 · PLC"
-        title="PLC 启停、报警和凸轮信号是怎么做的"
+        kicker="第六节"
+        title="PLC通信与控制"
       >
         <p>
           PLC 通信类 <code>RRuANDWone</code> 源码不在这 5
@@ -118,14 +118,13 @@ return new Result(value, value5);`}</CodeBlock>
 
       <Section
         id="loop"
-        kicker="F4 · 核心状态机"
-        title="测试主循环：电阻一拍、电流一拍"
+        kicker="第七节"
+        title="试验流程控制"
       >
         <p>
-          这是整套软件最值得写进课题报告的部分。外层{" "}
-          <code>continueLoop2</code> 管整次试验是否继续，内层{" "}
-          <code>continueLoop</code>{" "}
-          管“这一拍有没有采完电阻”。设计目的写在注释里：先读电阻，再读电流，再读电阻……防止一直读电流。
+          试验过程由双层循环实现。外层 <code>continueLoop2</code>{" "}
+          控制本次试验是否继续，内层 <code>continueLoop</code>{" "}
+          等待本拍电阻采集完成。源码注释明确要求先采集电阻、再采集电流，以避免电流信号保持有效时重复读表。
         </p>
         <Sub title="内循环在等什么">
           <p>
@@ -175,16 +174,21 @@ return new Result(value, value5);`}</CodeBlock>
             → 换串口读表 → 刷新界面 → 判超限”的循环。
           </p>
         </Sub>
-        <Callout title="文本框一变，曲线才会加点" tone="note">
-          采集线程自己并不调用 <code>series.add()</code>。它只
-          <code>setText()</code>。四个框都挂了{" "}
-          <code>DocumentListener</code>，文本插入后{" "}
+        <Sub title="操作流程">
+          <p>
+            进入界面后加载阈值、累计次数与历史编号；选择或输入编号后启动试验；右侧行程开关有效则采集电阻，左侧有效则采集电流；四路数据齐备后曲线加点并将次数加
+            2；满足保护条件则停机入库；试验结束后按编号保存，已有编号仅追加新点。退出时须复位沿标志与计时器，避免再次进入时漏采或误报凸轮超时。
+          </p>
+        </Sub>
+        <Callout title="曲线刷新方式" tone="note">
+          采集线程不直接调用 <code>series.add()</code>，仅更新文本框。四个显示框共用{" "}
+          <code>DocumentListener</code>，在文本插入且四路均非空时由{" "}
           <code>updateChart()</code>{" "}
-          才把这一点画上去。所以“通信成功”和“曲线更新”是通过界面文本耦合的。
+          完成加点。通信成功与曲线更新通过界面文本解耦。
         </Callout>
       </Section>
 
-      <Section id="speed" kicker="F5 · 速度" title="动作速度是怎么算出来的">
+      <Section id="speed" kicker="第八节" title="动作速度测算">
         <p>
           界面“速度”框只读，单位标签是“次/分钟”。计算藏在{" "}
           <code>readAndProcessRegisters()</code> 里，不单独开定时器。

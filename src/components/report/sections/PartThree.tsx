@@ -5,8 +5,8 @@ export function PartThree() {
     <>
       <Section
         id="protect"
-        kicker="F6–F9 · 保护"
-        title="四类保护停机分别怎么实现"
+        kicker="第九节"
+        title="保护停机机制"
       >
         <p>
           试验台会长时间连续动作，软件必须能自己停下来，否则触点烧蚀或机械卡死会损坏设备。实现上分成“数值保护”和“机构保护”两类。
@@ -83,8 +83,8 @@ export function PartThree() {
 
       <Section
         id="chart"
-        kicker="F10 · JFreeChart"
-        title="双 Y 轴实时曲线是怎么画出来的"
+        kicker="第十节"
+        title="实时曲线监测"
       >
         <p>
           图表标题“接点接触电阻参数曲线”。左侧 Y 轴是电阻（mΩ），三条线：电阻1红、电阻2绿、电阻3蓝。右侧
@@ -156,8 +156,8 @@ export function PartThree() {
 
       <Section
         id="save"
-        kicker="F11–F12 · 数据"
-        title="保存、追加保存和历史回显"
+        kicker="第十一节"
+        title="数据存储与回放"
       >
         <Sub title="1）保存前的校验">
           <p>点“保存”后先取日期、编号、监测次数：</p>
@@ -236,8 +236,8 @@ int rowsInserted = ExecuteCommon.saveTestResultsBatch(dataToInsert);`}</CodeBloc
 
       <Section
         id="db"
-        kicker="F13 · ExecuteCommon"
-        title="数据库访问和参数表"
+        kicker="第十二节"
+        title="数据库设计"
       >
         <p>
           两份 ExecuteCommon 源码一致，都是{" "}

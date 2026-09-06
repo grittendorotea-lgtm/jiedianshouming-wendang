@@ -5,15 +5,14 @@ import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
 export function PartOne() {
   return (
     <>
-      <Section id="overview" kicker="课题对象" title="这套软件到底在做什么">
+      <Section id="overview" kicker="第一节" title="系统概述">
         <p>
-          这不是普通的桌面记账或查询程序，而是一套<strong>接点接触电阻在线监测与寿命试验软件</strong>。现场设备反复开合触点，软件通过串口轮流读取三路接触电阻和一路电流，画成“次数—电阻/电流”曲线，并在电阻超限、电流超限、凸轮卡住或达到设定次数时自动停机报警。包名是
+          本系统为<strong>接点接触电阻在线监测与寿命试验软件</strong>。试品触点在周期性开合过程中，上位机按凸轮节拍采集三路接触电阻与一路回路电流，生成“动作次数—电阻/电流”曲线，并在电阻超限、电流超限、凸轮卡滞或达到设定次数时自动停机、记录故障。软件包名为
           <code className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 text-[13px]">com.ytzg.sealer</code>
-          ，主界面类是 <code className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 text-[13px]">ZzhejiPanel</code>，图表标题写的是“接点接触电阻参数曲线”。
+          ，主界面为 <code className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 text-[13px]">ZzhejiPanel</code>，图表标题为“接点接触电阻参数曲线”。
         </p>
         <p>
-          你提供的 5 个文件里，两份 <code>ExecuteCommon.java</code>{" "}
-          内容完全相同，可以当成同一个数据库访问类。真正形成完整功能闭环的是四块：
+          两份 <code>ExecuteCommon.java</code> 源码一致，按同一数据访问类分析。系统闭环由以下四部分构成：
         </p>
         <ul className="list-disc space-y-1 pl-5">
           <li>
@@ -29,19 +28,17 @@ export function PartOne() {
             <strong>ExecuteCommon</strong>：读写阈值、最大次数、累计次数，并批量保存曲线点。
           </li>
         </ul>
-        <Callout title="写课题报告时可以这样定位系统" tone="idea">
-          本系统面向密封电器/继电器接点的接触电阻试验。上位机以 Java
-          Swing 为界面，JFreeChart 实时绘图，jSerialComm 走 RS-485/串口
-          Modbus-RTU，JDBC 把试验曲线和故障记录写入数据库。软件的核心不是“画图”，而是“按凸轮节拍交替采集 +
-          超限保护 + 历史可追溯”。
+        <Callout title="系统定位" tone="idea">
+          本系统面向密封电器接点试验。上位机采用 Java Swing 与 JFreeChart
+          实现人机界面和实时曲线，采用 jSerialComm 完成 RS-485 Modbus-RTU
+          通信，采用 JDBC 持久化试验曲线与故障记录。其核心能力是节拍同步采集、多维保护停机与历史可追溯，而不仅是曲线显示。
         </Callout>
       </Section>
 
-      <Section id="arch" kicker="分层" title="整体架构：界面、通信、数据三层">
+      <Section id="arch" kicker="第二节" title="总体架构">
         <p>
-          程序按典型的工业上位机结构拆开：界面层只负责显示和按钮；通信层独占
-          COM3，按时间片轮流跟 PLC、电阻仪、电流表说话；数据层把参数和曲线落到
-          MySQL（从 SQL 语句可以看出来）。
+          软件按工业上位机惯例划分为三层：人机交互层负责显示与操作；设备通信层独占
+          COM3，按时间片依次访问 PLC、电阻仪与电流表；数据访问层将参数、曲线和故障记录写入数据库。
         </p>
         <div className="grid gap-3 md:grid-cols-3">
           <Card>
@@ -79,7 +76,7 @@ export function PartOne() {
             </CardContent>
           </Card>
         </div>
-        <Sub title="为什么三台仪表必须轮流占用同一个 COM3">
+        <Sub title="单串口时分复用">
           <p>
             <code>DianZu00000</code>、<code>JiaoL</code>、
             <code>RRuANDWone</code> 都写死了{" "}
@@ -95,16 +92,15 @@ export function PartOne() {
             ]}
           />
           <p>
-            这是这套软件最关键的硬件约束。课题报告里可以写成“单总线时分复用”：同一条
-            RS-485 总线上挂了 PLC 和多块仪表，上位机用开关量节拍决定这一拍该问谁。
+            该约束可概括为单总线时分复用：RS-485
+            上同时挂接 PLC 与多块仪表，上位机依据开关量节拍决定当前访问对象。
           </p>
         </Sub>
       </Section>
 
-      <Section id="features" kicker="功能清单" title="实现了哪些功能">
+      <Section id="features" kicker="第三节" title="功能组成">
         <p>
-          按“操作员在界面上能看见、能用到的能力”来归纳，软件实现了下面 13
-          项。后面每一节都会对照源码说明“怎么实现的”。
+          按可独立描述的业务能力归纳，系统实现以下 15 项功能。后文第 4 节至第 14 节说明其实现方法。
         </p>
         <div className="overflow-x-auto rounded-lg border border-border bg-white">
           <table className="w-full text-left text-sm">
@@ -117,19 +113,21 @@ export function PartOne() {
             </thead>
             <tbody className="text-slate-700">
               {[
-                ["F1", "三路接触电阻采集与单位解析", "DianZu00000"],
-                ["F2", "一路电流采集与单位解析", "JiaoL"],
-                ["F3", "PLC 启动/停止/声光报警", "ZzhejiPanel + RRuANDWone"],
-                ["F4", "按凸轮节拍交替采电阻和电流", "ZzhejiPanel.beginCLBtn"],
-                ["F5", "动作速度（次/分钟）实时计算", "readAndProcessRegisters"],
-                ["F6", "电阻超限保护停机", "外循环判断 pureValue"],
-                ["F7", "电流超限保护停机（>2.1A）", "外循环判断 dianliu1Value1"],
-                ["F8", "左/右凸轮超时故障（>12s）", "X1/X2 灭灯计时"],
-                ["F9", "达到设定测试次数自动停止", "timeSeconds >= testcount"],
-                ["F10", "双 Y 轴实时曲线与交互查看", "JFreeChart + DocumentListener"],
-                ["F11", "试验曲线批量保存 / 追加保存", "saveTestResultsBatch"],
-                ["F12", "按测试编号回显历史曲线", "loadSelectedTestResultToChart"],
-                ["F13", "阈值、累计次数、报警记录入库", "ExecuteCommon + policetime"],
+                ["F1", "三路接触电阻在线采集", "DianZu00000"],
+                ["F2", "回路电流在线采集", "JiaoL"],
+                ["F3", "PLC 运行控制与报警输出", "RRuANDWone"],
+                ["F4", "凸轮到位信号监测", "readAndProcessRegisters"],
+                ["F5", "节拍同步试验控制", "ZzhejiPanel 试验循环"],
+                ["F6", "动作速度实时测算", "v = 120 / Δt"],
+                ["F7", "接触电阻超限保护", "pureValue 与 dianzumax"],
+                ["F8", "电流超限保护", "dianliu1Value1 > 2.1 A"],
+                ["F9", "凸轮卡滞超时保护", "X1/X2 无效超过 12 s"],
+                ["F10", "试验次数上限控制", "timeSeconds 与 testcount"],
+                ["F11", "双纵坐标实时曲线监测", "JFreeChart"],
+                ["F12", "试验数据批量存储与追加", "saveTestResultsBatch"],
+                ["F13", "历史曲线按编号回放", "loadSelectedTestResultToChart"],
+                ["F14", "试验参数与累计次数管理", "d_dianzumax / allcount"],
+                ["F15", "故障停机记录", "policetime"],
               ].map((row) => (
                 <tr key={row[0]} className="border-t border-border">
                   <td className="px-3 py-2 font-medium">{row[0]}</td>
@@ -144,8 +142,8 @@ export function PartOne() {
 
       <Section
         id="r-collect"
-        kicker="F1 · DianZu00000"
-        title="三路接触电阻采集是怎么实现的"
+        kicker="第四节"
+        title="接触电阻采集"
       >
         <p>
           类 <code>com.ytzg.sealer.plc.test.DianZu00000</code>{" "}

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { PartFive } from "@/components/report/sections/PartFive";
 import { PartFour } from "@/components/report/sections/PartFour";
 import { PartOne } from "@/components/report/sections/PartOne";
 import { PartThree } from "@/components/report/sections/PartThree";
@@ -33,7 +32,6 @@ export default function PrintPage() {
         <PartTwo />
         <PartThree />
         <PartFour />
-        <PartFive />
       </div>
     </article>
   );

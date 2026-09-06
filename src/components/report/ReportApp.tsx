@@ -9,7 +9,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { navItems } from "./nav-items";
-import { PartFive } from "./sections/PartFive";
 import { PartFour } from "./sections/PartFour";
 import { PartOne } from "./sections/PartOne";
 import { PartThree } from "./sections/PartThree";
@@ -68,7 +67,7 @@ export function ReportApp() {
     <div className="min-h-screen bg-background">
       <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <div>
-          <p className="text-xs text-amber-800">课题报告讲义</p>
+          <p className="text-xs text-amber-800">课题报告</p>
           <p className="font-semibold text-slate-900">接点接触电阻监测系统</p>
         </div>
         <div className="flex items-center gap-2">
@@ -93,7 +92,7 @@ export function ReportApp() {
         <aside className="sticky top-0 hidden h-screen w-72 shrink-0 bg-sidebar lg:block">
           <div className="px-5 pb-3 pt-6">
             <p className="text-[11px] font-semibold tracking-[0.2em] text-sidebar-primary">
-              SOURCE REVIEW
+              课题报告
             </p>
             <h1 className="mt-2 text-lg font-semibold leading-7 text-sidebar-foreground">
               接点接触电阻
@@ -101,7 +100,7 @@ export function ReportApp() {
               在线监测系统
             </h1>
             <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
-              对照 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon 逐项拆功能实现。
+              功能实现分析，共十五节。
             </p>
             <Link
               href="/print"
@@ -118,15 +117,15 @@ export function ReportApp() {
         <main className="min-w-0 flex-1 px-4 py-8 md:px-10 md:py-12">
           <header className="mb-10 max-w-3xl">
             <p className="text-sm font-medium text-amber-800">
-              软件工程课题 · 源码功能实现分析
+              软件工程课题 · 功能实现分析
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
-              这套试验软件实现了什么，每一项是怎么做成的
+              接点接触电阻在线监测系统功能实现分析
             </h1>
             <p className="mt-4 text-[16px] leading-8 text-slate-600">
-              下面按真实源码讲解，不写空泛的“系统实现了数据采集与显示”。两份
-              ExecuteCommon 内容相同；完整闭环是：凸轮节拍 →
-              三路电阻 + 一路电流 → 双轴曲线 → 超限停机 → 数据库可回放。
+              依据 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon
+              源码，将系统归纳为 15 项功能，并按 15
+              节说明各模块的实现方法。两份 ExecuteCommon 内容相同。
             </p>
           </header>
 
@@ -135,7 +134,6 @@ export function ReportApp() {
             <PartTwo />
             <PartThree />
             <PartFour />
-            <PartFive />
           </div>
 
           <footer className="mt-16 max-w-3xl border-t border-border pt-6 text-sm text-slate-500">
