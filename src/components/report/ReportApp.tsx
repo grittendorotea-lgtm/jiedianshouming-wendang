@@ -180,9 +180,9 @@ export function ReportApp() {
               接点接触电阻在线监测系统功能实现分析
             </h1>
             <p className="mt-4 text-[16px] leading-8 text-slate-600">
-              依据 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon
-              源码，将系统归纳为 15 项功能，并按 15
-              节说明各模块的实现方法。两份 ExecuteCommon 内容相同。
+              依据基础版 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon，以及拓展版
+              SixMeterInstrumentReader 与 2026-08-11
+              四工位面板，将系统归纳为 15 项功能。每一节先写基础实现，再补四工位八表拓展与技术难点。
             </p>
           </header>
 
@@ -219,7 +219,9 @@ export function ReportApp() {
           </div>
 
           <footer className="mt-16 max-w-3xl border-t border-border pt-6 text-sm text-slate-500">
-            分析范围：ZzhejiPanel.java、DianZu00000.java、JiaoL.java、ExecuteCommon.java。
+            分析范围：基础版四类源码，以及{" "}
+            <code>SixMeterInstrumentReader.java</code>、
+            <code>ZzhejiPanel-20260811.java</code>。
             PLC 读写类 RRuANDWone 未包含在这批文件中，其行为根据主界面调用还原。
             完整可粘贴正文见仓库 <code>docs/课题报告-功能实现分析.md</code>
             ，或打开

@@ -24,8 +24,7 @@ export default function PrintPage() {
         接点接触电阻在线监测系统功能实现分析
       </h1>
       <p className="mt-4 leading-8 text-slate-600">
-        对照 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon
-        源码整理。浏览器打印即可导出 PDF。
+        对照基础版源码与四工位八表拓展版整理。浏览器打印即可导出 PDF。
       </p>
       <div className="mt-10 space-y-14">
         <PartOne />
