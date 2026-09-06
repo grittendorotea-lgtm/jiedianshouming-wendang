@@ -1,4 +1,4 @@
-import { Callout, CodeBlock, Flow, KvTable, QAList, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, Flow, KvTable, QABody, QAList, Section, Sub } from "../blocks";
 import {
   ArrowDown,
   ChartNode,
@@ -163,29 +163,37 @@ export function PartThree() {
         <QAList
           items={[
             {
-              q: "刚进界面、计时器还没初始化时，会不会立刻误报凸轮超时？",
+              q: "保护逻辑如何同时避免“未初始化计时器误报超时”和“超限后机构仍在转”？",
               a: (
-                <>
-                  超时窗口写成 (12, 10000)
-                  秒：正常节拍远小于 12 秒才会卡死报警，上限 10000
-                  是为了躲开计时器未赋值时那一跳巨大时间差。左右凸轮各用{" "}
-                  <code>lastTime111000</code>、
-                  <code>lastTime555111</code>，互不影响。
-                </>
-              ),
-            },
-            {
-              q: "电阻、电流、次数、凸轮四类保护触发后，怎样保证设备真停、还能追溯？",
-              a: (
-                <>
-                  外循环实时比较：任一路 <code>pureValue</code> &gt;{" "}
-                  <code>dianzumax</code>，或电流 &gt; 2.1 A，或{" "}
-                  <code>timeSeconds ≥ testcount</code>
-                  ，立刻打开 PLC 口，寄存器 1 写 1 停机、寄存器 2 写 1
-                  报警，<code>continueLoop2 = false</code>。凸轮超时走同一套写口。故障再{" "}
-                  <code>saveToPolicetimeTable</code>{" "}
-                  记次数、原文和时间。这不是测完再判合格，而是每拍闭环。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      <code>lastTime*</code>{" "}
+                      默认为 0。用当前毫秒去减，得到上千秒的假超时，一进界面就会报警。另一侧，若只弹窗不写线圈，操作员关掉对话框时机构还在烧蚀触点。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      超时窗口做成开区间 (12, 10000)
+                      秒：小于等于 12 视为正常节拍，大于等于 10000
+                      视为未初始化。左右凸轮各用一套时间基。数值保护在外层每拍比较：任一路{" "}
+                      <code>pureValue &gt; dianzumax</code>、电流 &gt; 2.1
+                      A、或 <code>timeSeconds ≥ testcount</code>
+                      。成立则先打开 PLC 口写寄存器 1/2，再{" "}
+                      <code>saveToPolicetimeTable</code>，最后{" "}
+                      <code>continueLoop2 = false</code>
+                      。判定发生在采集循环内部，不是试验结束后批处理。
+                    </>
+                  }
+                  bound={
+                    <>
+                      电流阈值硬编码 2.1 A，电阻阈值才走库。弹窗在工作线程调用{" "}
+                      <code>JOptionPane</code>
+                      ，会再阻塞该工位循环；基础版只有一台，尚可接受，4
+                      拖 1 里必须改成本工位隔离。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -268,16 +276,35 @@ export function PartThree() {
         <QAList
           items={[
             {
-              q: "电阻是 mΩ、电流是 A，怎样画在一张图上还不提前画出半拍数据？",
+              q: "双 Y 轴如何同时满足量纲隔离、采样完整性，以及“工作线程不得直接 add”？",
               a: (
-                <>
-                  左轴挂三路电阻，右轴挂电流。采集线程不直接{" "}
-                  <code>series.add</code>，只改四个文本框；{" "}
-                  <code>DocumentListener</code>{" "}
-                  等到三阻一电都非空，才在同一{" "}
-                  <code>timeSeconds</code>{" "}
-                  加点，然后横坐标 +2。变量名叫 timeSeconds，实际是次数，不宜当成时钟秒。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      电阻是 mΩ 量级，电流是 A
+                      量级，单轴会把其中一路压成一条线。更危险的是：电阻先到、电流未到就{" "}
+                      <code>series.add</code>
+                      ，寿命曲线会出现半拍点，后续回放和增量保存都会错位。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      左轴挂三路电阻数据集，右轴另建{" "}
+                      <code>NumberAxis(&quot;电流(A)&quot;)</code>
+                      。采集线程只改文本框；EDT 上的{" "}
+                      <code>DocumentListener</code> 等到四路非空，才在同一{" "}
+                      <code>timeSeconds</code> 给四条{" "}
+                      <code>XYSeries</code> 加点，然后 +2。变量名是
+                      timeSeconds，语义是动作次数。滚轮/滚动条同时改左右轴，避免两路在纵向上错位。
+                    </>
+                  }
+                  bound={
+                    <>
+                      完整性约束是“四框非空”，不是“四路 CRC
+                      都新”。隐藏框机制把电流和电阻在时间上绑在一起，但电流实际采自上一侧凸轮沿，严格说是同一机械循环、不是同一毫秒。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -396,24 +423,35 @@ int rowsInserted = ExecuteCommon.saveTestResultsBatch(dataToInsert);`}</CodeBloc
         <QAList
           items={[
             {
-              q: "同一试品分段试验，怎样避免把已经回显的旧点再插一遍？",
+              q: "表结构没有游标列，分段续测如何保证“只插入新增点”，并避免编号切换清空正在画的曲线？",
               a: (
-                <>
-                  回显时记下 <code>loadedPointCount</code> 和{" "}
-                  <code>loadedTestBianHao</code>
-                  。保存时只有“编号已存在且等于当前回显编号”才从该索引追加；否则从第
-                  0 点全量写。批插关自动提交，失败 rollback。这是基于历史采样点索引的增量存储。
-                </>
-              ),
-            },
-            {
-              q: "操作员误选新编号，会不会把正在画的曲线清空？回显时会不会递归加载？",
-              a: (
-                <>
-                  库里没有的编号直接 return，绝不清空当前曲线。回填下拉框时先置{" "}
-                  <code>loadingHistory</code>
-                  ，避免 ActionListener 再次触发把刚加载的点清掉。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      <code>test_results</code>{" "}
+                      一行一个采样点，库里没有“已保存到第几拍”。按编号全量再插会复制历史；按编号清空内存曲线，操作员试填一个新号就会丢掉未保存的当次试验。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      回显时把点数写入 <code>loadedPointCount</code>
+                      ，把编号写入 <code>loadedTestBianHao</code>
+                      。保存判定{" "}
+                      <code>appendMode = exists && 编号.equals(loadedTestBianHao)</code>
+                      ，追加从该索引取 <code>XYSeries</code>
+                      ，否则从 0 全量。批插关 autoCommit，失败
+                      rollback。成功后累计次数 + 新增点数×2，游标推到当前。库中不存在的编号直接
+                      return；<code>loadingHistory</code>{" "}
+                      挡住下拉回填引发的递归加载。
+                    </>
+                  }
+                  bound={
+                    <>
+                      游标在 JVM
+                      里，不在表里。进程被杀后只要编号仍对得上，重新回显能恢复游标；只改内存、不改编号则可能少存。这是用内存状态补表结构的缺口。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -511,17 +549,38 @@ int rowsInserted = ExecuteCommon.saveTestResultsBatch(dataToInsert);`}</CodeBloc
         <QAList
           items={[
             {
-              q: "阈值、曲线、故障分别怎么落库，两套连接会不会把一次保存写丢一半？",
+              q: "阈值、曲线、故障分走两套 JDBC 入口，事务边界在哪里，跨入口失败会留下什么不一致？",
               a: (
-                <>
-                  <code>d_dianzumax</code>、<code>allcount</code> 走{" "}
-                  <code>DBConnection</code>；<code>test_results</code>{" "}
-                  批插和 <code>policetime</code> 走{" "}
-                  <code>JdbcDeal</code>
-                  。曲线写入关自动提交，成功才 commit。参数一律{" "}
-                  <code>?</code>{" "}
-                  绑定。功能上能跑通，但两套入口是后续该收成一个连接池的点。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      <code>d_dianzumax</code> / <code>allcount</code> 走{" "}
+                      <code>DBConnection</code>，曲线批插和{" "}
+                      <code>policetime</code> 走 <code>JdbcDeal</code>
+                      。一次“保存成功”其实跨越两个连接，没有分布式事务。曲线写入成功但累计次数更新失败，或故障已弹窗但台账未落，都会出现。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      曲线路径相对完整：<code>saveTestResultsBatch</code>{" "}
+                      关自动提交，<code>addBatch</code> 后{" "}
+                      <code>executeBatch + commit</code>，异常
+                      rollback。参数一律 <code>?</code>{" "}
+                      绑定。累计次数在批插成功之后才{" "}
+                      <code>addAllCountBySaveCount</code>
+                      ，顺序上优先保证曲线不丢。故障插入是单条
+                      SQL，失败只弹“更新数据库失败”。
+                    </>
+                  }
+                  bound={
+                    <>
+                      两套入口不能互相回滚。报告应写明：这是可运行的工程折中，不是严谨的工作单元。后续应收成单一连接池，并把“曲线 +
+                      累计次数”放进同一事务。4 拖 1
+                      还要求按 <code>Shebeihao</code>{" "}
+                      切开阈值行，当前这批 ExecuteCommon 尚未对齐。
+                    </>
+                  }
+                />
               ),
             },
           ]}

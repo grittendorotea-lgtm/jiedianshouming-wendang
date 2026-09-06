@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Callout, CodeBlock, Flow, KvTable, QAList, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, Flow, KvTable, QABody, QAList, Section, Sub } from "../blocks";
 import {
   ArrowDown,
   ChartNode,
@@ -276,51 +276,102 @@ dianliu1Value1 = instrumentReader.getCurrentValue(1);`}</CodeBlock>
         </Callout>
       </Sub>
       <QAList
-        title="难点与代码解答"
+        title="重难点分析"
         items={[
           {
-            q: "现场只有 COM4、COM5 两个串口，四组设备却要能单独启动和停止，代码怎么做？",
+            q: "工位数大于串口数时，如何让四套设备独立启停，并且问表期间仍能对故障工位写停机？",
             a: (
-              <>
-                不按“一台设备一把口”去扩。COM4 专给 PLC，COM5 专给八台仪表。构造时{" "}
-                <code>SixMeterInstrumentReader.startReading()</code>{" "}
-                就在后台每 100ms 轮询地址 01～08，结果写入{" "}
-                <code>ConcurrentHashMap</code>
-                。四个工位凸轮到位后只{" "}
-                <code>getResistanceValue(5～8)</code>、
-                <code>getCurrentValue(1～4)</code>
-                ，不再 open/close 仪表口。启停写 PLC 寄存器 1～4：开始写
-                0，停止或故障写 1。每台有自己的{" "}
-                <code>isTestingStarted1～4</code>{" "}
-                和独立线程池，一台 <code>cancel</code>{" "}
-                只停本工位 Future。报警共用寄存器 5，故障入库带{" "}
-                <code>Shebeihao</code>
-                。邻站继续转。第 17 节用图 17-1 把这条再拆开讲了。
-              </>
+              <QABody
+                contradiction={
+                  <>
+                    沿用基础版“到位就关 PLC、开仪表”，四工位并发会互相踢口；保护停机也会卡在读表占用上。现场又只有
+                    COM4、COM5，不能按台扩口。
+                  </>
+                }
+                implementation={
+                  <>
+                    控制面与测量面拆开。COM4 专属 PLC，写寄存器 1～4
+                    分控运行，寄存器 5 公共报警。COM5 上{" "}
+                    <code>SixMeterInstrumentReader</code> 常驻轮询 01～08，
+                    CRC 后写入 <code>ConcurrentHashMap</code>
+                    。凸轮沿只读本工位 getter，不再 open/close。每台{" "}
+                    <code>isTestingStarted i</code> + 独立线程池 + 独立
+                    Future，停机只 <code>cancel</code>{" "}
+                    自己。详细分析与图 17-1 见第 17 节。
+                  </>
+                }
+                bound={
+                  <>
+                    缓存最大陈旧约 800ms。报警线圈 5
+                    仍共享。残留 <code>RRu/Wone(COM5)</code>{" "}
+                    会拆掉调度器。
+                  </>
+                }
+              />
             ),
           },
           {
-            q: "四个试验循环同时跑，会不会一起打开 COM4，或把邻站的表值读串？",
+            q: "四个 while 循环同时调用读 PLC 方法，互斥是监视器还是总线事务？邻站应答如何避免串缓存？",
             a: (
-              <>
-                四个循环都走同一个{" "}
-                <code>synchronized readAndProcessRegisters()</code>
-                ，PLC 访问被串行化，一次读 8 个输入字给四工位用。仪表侧查询线程每
-                100ms 只问一台，解析先看 <code>data[0]</code>{" "}
-                分流；工位 1 固定取 05/01，不会误用邻站缓存。
-              </>
+              <QABody
+                contradiction={
+                  <>
+                    四个循环都会{" "}
+                    <code>openSerialPort + readInputRegisters</code>
+                    。无互斥则 COM4 重入；有互斥但各读一遍，总线被浪费四倍。仪表侧若按发送序号入表，迟到帧会写入邻站。
+                  </>
+                }
+                implementation={
+                  <>
+                    <code>readAndProcessRegisters()</code> 是{" "}
+                    <code>synchronized</code>{" "}
+                    实例方法，四工位共享同一面板对象，COM4
+                    访问被监视器串行化；一次 04H 读 8
+                    字，拆成八路凸轮返回。仪表解析以帧内{" "}
+                    <code>data[0]</code> 为准：01～04 电流、05～08
+                    电阻，工位映射写死为 1→05/01、2→06/02。
+                  </>
+                }
+                bound={
+                  <>
+                    Java 监视器不是 PLC
+                    事务。写寄存器 5 与读 8
+                    字可能交错。持锁方法里还算四路速度，临界区偏长。
+                  </>
+                }
+              />
             ),
           },
           {
-            q: "工位 2 电阻超限，会不会把工位 1、3、4 一起停掉？",
+            q: "工位 2 超限时，隔离的是机构、线程，还是整条仪表总线？公共报警位带来什么残留耦合？",
             a: (
-              <>
-                不会。保护只比较本工位缓存和本工位{" "}
-                <code>getDianzumaxValue2()</code>
-                ，然后写寄存器 2 停本台、写寄存器 5 报警，灯改 N，停{" "}
-                <code>isTestingStarted2</code>
-                。其他工位的 Future 继续跑。保存和查重也按设备号切开。
-              </>
+              <QABody
+                contradiction={
+                  <>
+                    共享读取器和共享 PLC
+                    对象让“停一台”很容易变成“停总线”。若保护里调用{" "}
+                    <code>instrumentReader.stopReading()</code>
+                    ，邻站会同时失去缓存。
+                  </>
+                }
+                implementation={
+                  <>
+                    比较 <code>getDianzumaxValue2()</code>{" "}
+                    与本工位缓存，写寄存器 2 停本台，写寄存器 5
+                    报警，灯改 N，结束工位 2 的{" "}
+                    <code>continueLoop2</code> 并{" "}
+                    <code>cancel</code> Future2。COM5
+                    调度器不停。台账和查重带 <code>Shebeihao=2</code>。
+                  </>
+                }
+                bound={
+                  <>
+                    机构隔离成立，报警隔离不成立：工位 2 稍后把寄存器 5
+                    清 0，可能抹掉工位 3 刚置的报警。电流阈值四台仍共用
+                    2.1 A。
+                  </>
+                }
+              />
             ),
           },
         ]}

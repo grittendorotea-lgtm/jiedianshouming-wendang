@@ -15,5 +15,5 @@ export const navItems = [
   { id: "classes", label: "14. 软件结构" },
   { id: "conclusion", label: "15. 关键技术与总结" },
   { id: "four-to-one", label: "16. 4拖1方案拓展" },
-  { id: "hard-qa", label: "17. 难点问题与代码解答" },
+  { id: "hard-qa", label: "17. 重难点问题与代码解答" },
 ] as const;

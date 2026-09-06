@@ -1,4 +1,4 @@
-import { Callout, CodeBlock, Flow, KvTable, QAList, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, Flow, KvTable, QABody, QAList, Section, Sub } from "../blocks";
 import {
   ArrowDown,
   ChartNode,
@@ -66,31 +66,39 @@ comPort.writeBytes(request, request.length);`}</CodeBlock>
         <QAList
           items={[
             {
-              q: "电流用监听、电阻用轮询，怎样保证问完一次就能关口、还不卡界面？",
+              q: "电流采集是异步监听，为何主循环仍必须“问一次、睡 200ms、关口”，而不能让监听器长期占着 COM3？",
               a: (
-                <>
-                  <code>JiaoL.startReading()</code> 打开 COM3 后只发一帧 03H，靠{" "}
-                  <code>SerialPortDataListener</code> 收应答，监听里{" "}
-                  <code>sleep(100)</code> 等整帧。主界面再{" "}
-                  <code>Sleep.sleepTh(200)</code>，取{" "}
-                  <code>getJiaoLZValueWithUnit()</code>，立刻{" "}
-                  <code>stopReading()</code>
-                  。这是“问一次、等缓存、关口”，不是长期后台占口。单位码不是
-                  3/4 则返回 0，避免脏数据拿去和 2.1 A 比较。
-                </>
-              ),
-            },
-            {
-              q: "电阻同步、电流异步，怎样对齐成同一个采样点？",
-              a: (
-                <>
-                  电流先写入隐藏框 <code>dianzu444NO</code>
-                  ，电阻读完再抄到显示框 <code>dianzu444</code>
-                  。四个显示框共用{" "}
-                  <code>DocumentListener</code>
-                  ，三路电阻和一路电流都非空，才在同一{" "}
-                  <code>timeSeconds</code> 上加点。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      监听器适合连续收数，但 COM3
+                      还要还给 PLC。若 <code>JiaoL</code>{" "}
+                      一直开着口，X1 拍的电阻轮询和下一圈 04H
+                      巡检都会打开失败。电阻是同步 for
+                      循环，电流是事件回调，两种占口语义不能混用。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      主界面约定成一次性事务：
+                      <code>startReading()</code> 发一帧 01 03，监听里{" "}
+                      <code>sleep(100)</code> 等整帧写入缓存；调用方再{" "}
+                      <code>Sleep.sleepTh(200)</code> 取{" "}
+                      <code>getJiaoLZValueWithUnit()</code>，立刻{" "}
+                      <code>stopReading()</code>
+                      。单位码不是 3/4 返回 0，避免脏数据进入 2.1 A
+                      比较。电流先落入隐藏框 <code>dianzu444NO</code>
+                      ，等电阻拍抄到显示框，四路齐了才加点。
+                    </>
+                  }
+                  bound={
+                    <>
+                      200ms
+                      是经验等待，不是协议保证。应答晚到会被关口丢掉；早到则依赖监听线程已写入缓存。4
+                      拖 1 用后台常驻读取器消掉了这种“借口还口”。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -161,28 +169,40 @@ return new Result(value, value5);`}</CodeBlock>
         <QAList
           items={[
             {
-              q: "PLC 只给出两个输入字，怎样同时驱动采集、速度和机械超时？",
+              q: "两个输入字如何同时承担采集触发、速度积分和机械超时三种语义，而不互相污染？",
               a: (
-                <>
-                  <code>readAndProcessRegisters()</code> 用功能码 04H
-                  从地址 0x08 读 2 个字：X1 右侧凸轮、X2
-                  左侧凸轮。X1 上升沿去读三路电阻并刷新速度；X2
-                  上升沿去读电流。任一凸轮长时间为 0
-                  就判超时。开始测试写寄存器 1 为 0 让设备转；故障写寄存器 1、2
-                  为 1。这是状态驱动，不是按固定周期扫全部传感器。
-                </>
-              ),
-            },
-            {
-              q: "点“停止测试”为什么主要写报警位，运行位却被注释掉？",
-              a: (
-                <>
-                  else 分支用 <code>currentTestFuture.cancel(true)</code>{" "}
-                  打断后台循环，清超时计时，打开串口{" "}
-                  <code>writeSingleRegister(2, 0)</code>{" "}
-                  消报警。寄存器 1 写 0 的语句被注释，所以手动停侧重停软件循环和关报警，设备运行位以现场调试为准。保护停机路径才会明确把运行位写成
-                  1。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      X1/X2 是电平。同一 bit=1
+                      既表示“该读电阻/电流”，也表示“机构还在动”，还要提供速度的 Δt
+                      起点。若三种逻辑共用一个标志，读表闭锁会把超时计时清掉，或速度会对同一亮灯连算。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      代码把同一电平拆成三套沿状态：
+                      <code>processed2</code> 管电阻拍，
+                      <code>processed555111</code> 管电流拍，
+                      <code>processedjishi1</code> /{" "}
+                      <code>lastTime111111</code>{" "}
+                      管速度；超时另用{" "}
+                      <code>lastTime111000</code> /{" "}
+                      <code>lastTime555111</code>
+                      ，且只在灭灯且窗口 (12, 10000)
+                      秒时触发。写侧分离：寄存器 1 运行，寄存器 2
+                      报警。读输入必须确认功能码为 04H，否则 10ms 重问。
+                    </>
+                  }
+                  bound={
+                    <>
+                      手动停止路径把寄存器 1 的写入注释掉了，只{" "}
+                      <code>cancel</code>{" "}
+                      循环并清报警；机构是否真正停下依赖现场。保护路径才会明确写运行位
+                      1。这是源码里控制语义不对称的地方，报告应承认而不是圆过去。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -317,30 +337,38 @@ return new Result(value, value5);`}</CodeBlock>
         <QAList
           items={[
             {
-              q: "为什么必须先采电阻、再采电流，还要内外两层循环？",
+              q: "双层循环的不变式是什么？先电阻后电流如何防止“电流保持有效时把总线打满”？",
               a: (
-                <>
-                  源码注释要求先电阻、后电流，避免电流信号保持有效时反复问表。内层{" "}
-                  <code>continueLoop</code> 等到本拍电阻采完才退出；外层{" "}
-                  <code>continueLoop2</code>{" "}
-                  立刻做电阻超限、电流超限、次数上限三道门禁。同一凸轮持续为
-                  1 时，靠 <code>processed2</code>、
-                  <code>processed555111</code> 闭锁，回到 0 才清标志。
-                </>
-              ),
-            },
-            {
-              q: "串口等待会不会把界面卡死？采集线程为什么不直接往图上加点？",
-              a: (
-                <>
-                  正式循环丢进 <code>executorServicebingxing</code>，停止用{" "}
-                  <code>Future.cancel(true)</code>
-                  。界面刷新一律{" "}
-                  <code>SwingUtilities.invokeLater</code>
-                  。采集线程只改文本框，由监听器在 EDT 上{" "}
-                  <code>updateChart()</code>
-                  ，避免违反 Swing 单线程规则。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      X2 高电平会持续多个扫描周期。若每圈都启动{" "}
+                      <code>JiaoL</code>
+                      ，电流监听会反复占 COM3，电阻拍永远抢不到口。反过来，若电阻未齐就进入外层保护，会用上一拍旧值误停机。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      内层 <code>continueLoop</code> 的退出条件是本拍电阻采集完成（
+                      <code>processed2</code> 置位并{" "}
+                      <code>continueLoop=false</code>
+                      ），注释写明“先电阻、后电流”。电流只在{" "}
+                      <code>value2==1 && !processed555111</code>{" "}
+                      时问一次。外层 <code>continueLoop2</code>{" "}
+                      在内层结束后做三道门禁：电阻 &gt;{" "}
+                      <code>dianzumax</code>、电流 &gt; 2.1 A、次数 ≥{" "}
+                      <code>testcount</code>
+                      。阻塞 I/O 在线程池，UI 回 EDT，加点只在四框齐备时发生。
+                    </>
+                  }
+                  bound={
+                    <>
+                      不变式靠布尔旗标维持，不是形式化状态机。旗标漏清，下一次会跳过整拍。
+                      <code>cancel(true)</code>{" "}
+                      打不断已经发出的 Modbus 帧。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -376,15 +404,40 @@ suduTest.setText(String.valueOf(roundedFrequency111));`}</CodeBlock>
         <QAList
           items={[
             {
-              q: "速度为什么写成 120/Δt，开关抖动时会不会把次数刷飞？",
+              q: "v = 120/Δt 与横坐标步进 2、累计次数 ×2 构成同一计数约定；抖动和未定义的机械含义如何处理？",
               a: (
-                <>
-                  代码明确是 <code>v = 120.0 / timeDifference</code>
-                  。两次 X1 间隔 2 秒就显示 60 次/分钟。系数 120
-                  的机械含义要结合机构确认，报告里不擅自解释成半周期或别的物理量。只有
-                  Δt &gt; 2 秒才认作有效间隔；X1 回到 0 才清{" "}
-                  <code>processedjishi1</code>，同一亮灯不会连算两次。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      行程开关在到位瞬间会抖出多个上升沿。若每个沿都{" "}
+                      <code>120/Δt</code>
+                      ，速度框会在几十到几千之间跳。系数 120
+                      也容易被解释成“半周期”或“双触点”，但源码没有给出机构模型。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      速度嵌在{" "}
+                      <code>readAndProcessRegisters()</code>{" "}
+                      里，不另开定时器。仅当 X1 上升沿且 Δt &gt; 2
+                      秒才计算，<code>Math.round</code>{" "}
+                      后写速度框，并把{" "}
+                      <code>lastTime111111</code> 推到当前。X1 回 0 清{" "}
+                      <code>processedjishi1</code>
+                      。曲线每点 <code>timeSeconds += 2</code>
+                      ，保存成功后累计次数按新增点数 ×2
+                      增加。三者共享同一计数约定：一个采样点折合两次动作。
+                    </>
+                  }
+                  bound={
+                    <>
+                      报告必须把 120 写成“与步进 2、累计 ×2
+                      一致的软件约定”，不得臆造凸轮角度或传动比。死区 2
+                      秒会滤掉更快的真实节拍，现场机构若快于 2
+                      秒/沿，速度会显示空白或不更新。
+                    </>
+                  }
+                />
               ),
             },
           ]}

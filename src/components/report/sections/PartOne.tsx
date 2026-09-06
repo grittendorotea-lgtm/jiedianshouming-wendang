@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Callout, CodeBlock, Flow, KvTable, QAList, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, Flow, KvTable, QABody, QAList, Section, Sub } from "../blocks";
 import { ArrowDown, ChartNode, Figure, LayerStack, VChart } from "../flowchart";
 
 export function PartOne() {
@@ -43,13 +43,29 @@ export function PartOne() {
         <QAList
           items={[
             {
-              q: "这套软件最难的地方是画寿命曲线，还是把采集和控制对齐？",
+              q: "寿命曲线只是结果。真正的工程难点是什么，它为什么比“定时采数 + 画图”难一个量级？",
               a: (
-                <>
-                  曲线只是结果。真正难的是用 PLC 两个输入字识别机械阶段，在对应到位瞬间分时读三路电阻和一路电流，再立刻拿去比阈值、决定停机。基础版挤在一把
-                  COM3 上完成这件事；4 拖 1 则要在两把口上让四组设备各自启停。第 17
-                  节把这类题集中答了一遍。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      若按固定周期读全部传感器，凸轮未到位时电阻无意义，到位瞬间却可能正被 PLC
+                      占着 COM3。采集、判定、停机必须落在同一次机械动作上，否则曲线好看也不能保护设备。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      软件用 PLC 两个输入字识别机械阶段，在 X1/X2
+                      上升沿分时读取三路接触电阻和一路电流，当场与阈值比较并写停机线圈，形成“状态识别—分时采集—联锁停机—增量存盘”闭环。基础版把这件事挤在一把
+                      COM3 上；4 拖 1 再拆成控制面 / 测量面，让四套状态机独立启停。第
+                      17 节按矛盾—实现—边界展开。
+                    </>
+                  }
+                  bound={
+                    <>
+                      难点不在 JFreeChart，而在半双工互斥、沿闭锁和线程模型。缺任何一环，都会出现误采、误停或界面卡死。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -155,14 +171,39 @@ export function PartOne() {
           <QAList
             items={[
               {
-                q: "为什么不给 PLC、电阻仪、电流表各开一个串口，而要挤在 COM3 上？",
+                q: "三个 Java 串口对象都绑定 COM3，互斥条件是什么？异常路径未 close 会导致什么故障模式？",
                 a: (
-                  <>
-                    基础版现场就是一把 RS-485。三个 Java 对象都写死{" "}
-                    <code>getCommPort(&quot;COM3&quot;)</code>
-                    ，Windows 下不能同时打开。代码用“先 close 再 open”做时分复用：平时
-                    PLC 占口读 X1/X2，到位后再把口交给仪表，读完立刻归还。这是稳定性关键风险：异常路径若没关口，下一模块会打不开。
-                  </>
+                  <QABody
+                    contradiction={
+                      <>
+                        <code>DianZu00000</code>、<code>JiaoL</code>、
+                        <code>RRuANDWone</code> 都写死{" "}
+                        <code>getCommPort(&quot;COM3&quot;)</code>
+                        。Windows 下同一物理口不能被多个实例同时打开；RS-485
+                        半双工也不允许主站并发发两帧。现场又没有三把独立口可分。
+                      </>
+                    }
+                    implementation={
+                      <>
+                        互斥靠调用顺序而不是锁：平时 PLC 占口巡检 X1/X2；上升沿先{" "}
+                        <code>closeSerialPort()</code>，再让仪表类{" "}
+                        <code>openPort</code>
+                        ，读完立刻 close
+                        归还。电阻侧打不开就 50ms 重试，正好抢 PLC
+                        刚释放的窗口。这是单总线时分复用，访问对象由凸轮节拍决定。
+                      </>
+                    }
+                    bound={
+                      <>
+                        协作式互斥没有统一{" "}
+                        <code>SerialPortManager</code>
+                        。保护停机、超时弹窗、线程取消任一条路径漏 close，下一模块会卡在{" "}
+                        <code>waitForPort()</code>
+                        ，表现为“灯亮了但不读数”。4 拖 1
+                        正是为了消灭这条风险，把控制和测量拆到 COM4/COM5。
+                      </>
+                    }
+                  />
                 ),
               },
             ]}
@@ -260,13 +301,32 @@ export function PartOne() {
         <QAList
           items={[
             {
-              q: "十个模块里，答辩时该抓住哪几条，而不是逐个讲按钮？",
+              q: "十个功能模块如何收敛成可答辩的技术主线，而不是功能清单？",
               a: (
-                <>
-                  三条主线：状态驱动自动测试、多源参数对齐监测、安全联锁与数据追溯。第
-                  4～14 节和第 16 节末尾都有“问—答”式难点；第 17
-                  节把“两串口拖四组独立设备”等题再归纳一遍。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      按钮、编号框、双轴图都可以单独讲，但它们不构成难度。评委追问的是：多源数据如何对齐、总线如何互斥、异常如何闭环。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      十条功能压成三条主线。其一，状态驱动：用 X1/X2
+                      决定何时读电阻、何时读电流，而不是定时全量扫描。其二，多源协同：同步电阻、异步电流、PLC
+                      巡检被编排成同一拍，再画到双 Y
+                      轴。其三，联锁与追溯：每拍比较阈值并写线圈，曲线增量落{" "}
+                      <code>test_results</code>，故障落{" "}
+                      <code>policetime</code>。4 拖 1
+                      是第三条主线的横向扩展：隔离从“一台上的模块”变成“四套状态机”。
+                    </>
+                  }
+                  bound={
+                    <>
+                      第 4～16 节末尾的问—答都按“矛盾—实现—边界”写。第 17
+                      节把两串口拖四工位、沿闭锁、增量游标等题收在一起。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -376,27 +436,36 @@ export function PartOne() {
         <QAList
           items={[
             {
-              q: "三块电阻表共线，怎样保证问 2 的时候不会把 3、4 的应答写进电阻 1？",
+              q: "三块电阻表挂在同一 RS-485 上，如何避免把从站 3 的应答写入电阻 1，CRC 失败时又为何宁可丢数？",
               a: (
-                <>
-                  <code>readAndStoreValues()</code> 按地址 2、3、4
-                  串行发 03H 帧，每问一路等约 50ms 再收。解析后用{" "}
-                  <code>switch (address)</code> 写入{" "}
-                  <code>dianZValue1/2/3</code>
-                  。CRC 失败返回 0，不覆盖为邻站值。半双工上必须排队，不能三路并发。
-                </>
-              ),
-            },
-            {
-              q: "原始整数怎样变成 12.34 mΩ，又怎样拿去和阈值比较？",
-              a: (
-                <>
-                  <code>rawValue = (data[3]&lt;&lt;8)|data[4]</code>，再除以{" "}
-                  <code>10^data[6]</code>，<code>data[8]</code> 决定
-                  mΩ/Ω/kΩ。界面显示带单位字符串，主界面{" "}
-                  <code>extractNumber()</code> 抠出{" "}
-                  <code>pureValue</code> 再和 <code>dianzumax</code> 比。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      半双工总线上三台从站会同时“听见”主机。若并发发三帧，应答重叠无法配对；若按到达顺序而不是按请求地址入表，邻站值会串进{" "}
+                      <code>dianZValue1</code>，保护会停错通道。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      <code>readAndStoreValues()</code> 对 address = 2、3、4
+                      串行发 03H（起始 1、数量 3），每问一路 sleep
+                      约 50ms 再收。解析后 <code>switch (address)</code>{" "}
+                      写入对应字段。CRC 失败返回 0
+                      且不覆盖为邻站值——空失败优于错成功。
+                    </>
+                  }
+                  bound={
+                    <>
+                      串行等待拉长了 X1
+                      拍的占口时间，这段时间 PLC
+                      看不到凸轮。三路单位实际共用{" "}
+                      <code>dianZUnit1</code>
+                      ，最后一路会覆盖显示单位；判定用{" "}
+                      <code>extractNumber</code>{" "}
+                      后的纯数值，单位不一致时人眼和机器会看到两种量纲。
+                    </>
+                  }
+                />
               ),
             },
           ]}

@@ -102,7 +102,7 @@ export function ReportApp() {
         寿命测试软件
       </h1>
       <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
-        前十五节为基础实现，第十六节为 4 拖 1，第十七节归纳难点问—答。点目录即可跳转。
+        前十五节为基础实现，第十六节为 4 拖 1，第十七节按矛盾—实现—边界归纳重难点。点目录即可跳转。
       </p>
       <Link
         href="/print"
@@ -151,7 +151,7 @@ export function ReportApp() {
           />
           <aside className="relative flex h-full w-[min(20rem,86vw)] flex-col bg-sidebar shadow-2xl">
             <div className="flex items-center justify-between px-4 pt-4">
-              <p className="text-sm text-sidebar-foreground/80">十七节目录</p>
+              <p className="text-sm text-sidebar-foreground/80">十七节 · 重难点</p>
               <Button
                 variant="ghost"
                 size="icon"
@@ -197,7 +197,7 @@ export function ReportApp() {
             </p>
             <p className="mt-4 text-[16px] leading-8 text-slate-600">
               对照源码整理。前十五节写基础版功能实现与关键技术，第十六节单独写
-              4 拖 1 多工位方案，第十七节归纳难点与代码解答。各功能节末尾都有问—答。
+              4 拖 1 多工位方案，第十七节归纳重难点。各功能节末尾按矛盾—实现—边界作技术分析。
             </p>
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4">
               <p className="text-sm font-semibold text-amber-950">摘要</p>

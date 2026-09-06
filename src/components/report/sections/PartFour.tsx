@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Callout, CodeBlock, KvTable, QAList, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, KvTable, QABody, QAList, Section, Sub } from "../blocks";
 import { Figure, SeqTable } from "../flowchart";
 
 export function PartFour() {
@@ -140,24 +140,36 @@ for (int j = 0; j < length; j++) {
         <QAList
           items={[
             {
-              q: "总线上夹杂干扰时，错误读数会不会拿去比阈值、画进寿命曲线？",
+              q: "CRC 在这套系统里不是“校验一下”，而是安全边界：它如何把干扰帧挡在判定和曲线之外？",
               a: (
-                <>
-                  请求和应答都算 Modbus CRC-16（初值 0xFFFF，多项式 0xA001）。长度不够或校验失败直接丢弃，不进入{" "}
-                  <code>pureValue</code> 和 <code>series.add</code>
-                  。PLC 应答功能码不是 04H 就延时 10ms 重问，避免把半包当凸轮沿。
-                </>
-              ),
-            },
-            {
-              q: "一拍里 PLC、三块电阻表、电流表怎样排队，才不会抢同一把 COM3？",
-              a: (
-                <>
-                  平时 PLC 用 08 04 读两路输入。X1 到位后关口，再按地址
-                  2、3、4 各发一帧 03H；交还后再盯 X2，到位后发 01 03
-                  读电流。半双工上必须排队，不能并发。图 13-1
-                  把这一拍时序写全了。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      接触器动作时 RS-485
+                      上常见半包和位翻转。若把损坏的 16
+                      位整数当电阻，一次尖峰就能触发停机，寿命曲线也会留下无法解释的断点。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      请求对前 6 字节、应答对除 CRC
+                      外整帧计算 Modbus CRC-16（初值 0xFFFF，多项式反射 0xA001）。失败则返回空/0，不写{" "}
+                      <code>pureValue</code>，监听器也不会加点。PLC
+                      还必须核对功能码 04H，否则 10ms
+                      重问——防止把仪表的 03H 残帧当成凸轮沿。一拍访问顺序见图
+                      13-1：先 08 04，再 02/03/04 的 03H，再交还，最后 01
+                      03。
+                    </>
+                  }
+                  bound={
+                    <>
+                      CRC
+                      只能保证“这帧没坏”，不能保证“这帧是刚才问的那台”——基础版靠串行等待配对，4
+                      拖 1 必须再读 <code>data[0]</code>{" "}
+                      地址。丢弃后本拍缺数，保护比较可能仍用上一拍旧值。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -320,16 +332,37 @@ for (int j = 0; j < length; j++) {
         <QAList
           items={[
             {
-              q: "退出后再进试验页，会不会沿用上次的线程、沿标志或串口占用？",
+              q: "试验页是长生命周期 JPanel。退出后再进入，如何拆除上一次的线程、沿闭锁和串口占用？",
               a: (
-                <>
-                  “退出”先走 <code>resetForNextEnter()</code>：停
-                  Timer、取消 Future、移除文本监听、关串口、复位{" "}
-                  <code>AtomicBoolean</code>{" "}
-                  和时间变量，再回 Home。否则下一次会误判凸轮超时，或打不开
-                  COM3。界面更新必须回 EDT，采集在 3 线程池，电流监听在串口回调线程，三类线程不能混着改
-                  Swing 控件。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      面板对象往往被复用而不是 new。若只{" "}
+                      <code>setVisible(false)</code>
+                      ，上一轮的 Future 还在读 COM3，<code>processed2</code>{" "}
+                      仍为 true，<code>lastTime*</code>{" "}
+                      还是旧时间戳——下次一进界面就会跳过采集或立刻报凸轮超时。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      “退出”强制走 <code>resetForNextEnter()</code>：停
+                      Timer、 <code>cancel</code> Future、移除{" "}
+                      <code>DocumentListener</code>
+                      、关闭串口、复位全部{" "}
+                      <code>AtomicBoolean</code>{" "}
+                      与时间基，再回 Home。三类线程的职责被切开：EDT
+                      只改控件，3 线程池跑试验循环，jSerialComm
+                      回调只写电流缓存。
+                    </>
+                  }
+                  bound={
+                    <>
+                      复位是手工清单，不是自动生命周期。漏一项就是下一次的偶发故障。4
+                      拖 1 有四套旗标和四个 Future，清单更长，漏清的概率更高。
+                    </>
+                  }
+                />
               ),
             },
           ]}
@@ -457,13 +490,35 @@ for (int j = 0; j < length; j++) {
         <QAList
           items={[
             {
-              q: "基础版和 4 拖 1 各自最难的一句，答辩时怎么收口？",
+              q: "基础版与 4 拖 1 的本质难点差在哪一层：画图、协议，还是调度与隔离？",
               a: (
-                <>
-                  基础版：一把 COM3 上用凸轮状态把电阻和电流对齐。4 拖
-                  1：两把口上把问表和用数拆开，让四套状态机独立启停。第 17
-                  节按问—答把调度、沿闭锁、增量存盘和分设备台账集中写了。
-                </>
+                <QABody
+                  contradiction={
+                    <>
+                      把 4 拖 1 理解成“多画三张图、多复制三套按钮”，会完全说错难度。图和页签是同构副本；真正增加的是并发度对半双工介质的压力。
+                    </>
+                  }
+                  implementation={
+                    <>
+                      基础版难在单总线编排：COM3
+                      上用凸轮电平把同步电阻、异步电流和 PLC
+                      巡检收成同一拍，再用沿闭锁和内存游标保证不重读、不重存。4
+                      拖 1
+                      难在解耦：问表从试验循环剥离到 COM5
+                      常驻调度器，控制面按线圈 1～4
+                      隔离，测量面按缓存共享，COM4 用{" "}
+                      <code>synchronized</code>{" "}
+                      串行化。第 17 节把这两条主线按矛盾—实现—边界写开。
+                    </>
+                  }
+                  bound={
+                    <>
+                      仍未收干净的是公共报警线圈、两套 JDBC
+                      入口、以及 ExecuteCommon
+                      单记录接口与分设备阈值调用的缺口。这些应作为改进点，而不是已解决的难点。
+                    </>
+                  }
+                />
               ),
             },
           ]}

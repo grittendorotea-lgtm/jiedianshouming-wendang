@@ -74,21 +74,49 @@ export function CodeBlock({
 
 export function QA({ q, a }: { q: string; a: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-amber-200/80 bg-white">
+    <article className="overflow-hidden rounded-lg border border-amber-200/80 bg-white">
       <p className="bg-amber-50 px-4 py-2.5 text-[14.5px] font-semibold leading-7 text-slate-900">
         <span className="mr-2 text-amber-800">问</span>
         {q}
       </p>
-      <div className="px-4 py-3 text-[14.5px] leading-7 text-slate-700">
-        <span className="mr-2 font-semibold text-emerald-800">答</span>
+      <div className="space-y-2.5 px-4 py-3 text-[14.5px] leading-7 text-slate-700">
         {a}
       </div>
-    </div>
+    </article>
+  );
+}
+
+export function QABody({
+  contradiction,
+  implementation,
+  bound,
+}: {
+  contradiction: ReactNode;
+  implementation: ReactNode;
+  bound?: ReactNode;
+}) {
+  return (
+    <>
+      <p>
+        <span className="mr-1.5 font-semibold text-emerald-800">矛盾</span>
+        {contradiction}
+      </p>
+      <p>
+        <span className="mr-1.5 font-semibold text-emerald-800">实现</span>
+        {implementation}
+      </p>
+      {bound ? (
+        <p>
+          <span className="mr-1.5 font-semibold text-amber-800">边界</span>
+          {bound}
+        </p>
+      ) : null}
+    </>
   );
 }
 
 export function QAList({
-  title = "难点与代码解答",
+  title = "重难点分析",
   items,
 }: {
   title?: string;
