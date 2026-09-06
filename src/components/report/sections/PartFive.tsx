@@ -1,6 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
+import {
+  ArrowDown,
+  ChartNode,
+  Figure,
+  LayerStack,
+  VChart,
+} from "../flowchart";
 
 export function PartFive() {
   return (
@@ -18,8 +25,29 @@ export function PartFive() {
           “4拖1”不是四套软件各管一台，而是一套程序并行管理四台。界面用{" "}
           <code>JTabbedPane</code>{" "}
           做成“监测设备1～4”四个页签；每台设备各有启停按钮、状态灯、编号、次数、速度、电阻/电流显示和一张双轴曲线。现场接线则收成两路：COM4
-          只连 PLC，COM5 只连八台仪表。
+          只连 PLC，COM5           只连八台仪表。
         </p>
+        <Figure no="16-1" title="4拖1双总线结构">
+          <LayerStack
+            layers={[
+              {
+                title: "ZzhejiPanel　监测设备 1～4",
+                detail: "四套启停、状态灯、编号、曲线；一台停机不影响邻站",
+                tone: "ui",
+              },
+              {
+                title: "COM4　RRuANDWone → PLC",
+                detail: "地址 0x01，一次读 8 路凸轮；寄存器 1～4 分控，寄存器 5 公共报警",
+                tone: "comm",
+              },
+              {
+                title: "COM5　SixMeterInstrumentReader → 八台仪表",
+                detail: "01～04 电流，05～08 电阻；100ms 轮询入缓存，工位只读 getter",
+                tone: "data",
+              },
+            ]}
+          />
+        </Figure>
         <div className="grid gap-3 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -103,6 +131,23 @@ export function PartFive() {
             "四个试验循环只调用 getter，不再 startReading / stopReading。",
           ]}
         />
+        <Figure no="16-2" title="八表轮询与四工位用数">
+          <VChart>
+            <ChartNode kind="start">startReading() 打开 COM5</ChartNode>
+            <ArrowDown />
+            <ChartNode>每 100ms 问下一台：01→08</ChartNode>
+            <ArrowDown />
+            <ChartNode kind="io">监听线程等待 80ms 取整帧</ChartNode>
+            <ArrowDown />
+            <ChartNode>CRC 通过后按 data[0] 分流入缓存</ChartNode>
+            <ArrowDown />
+            <ChartNode>工位 1 读电阻 05、电流 01</ChartNode>
+            <ArrowDown />
+            <ChartNode>工位 2/3/4 同理读 06/07/08 与 02/03/04</ChartNode>
+            <ArrowDown />
+            <ChartNode kind="end">凸轮到位只取缓存，不再抢口</ChartNode>
+          </VChart>
+        </Figure>
         <p>
           解析用 <code>BigDecimal.movePointLeft</code>{" "}
           还原小数位。电流单位 mA/A/kA，电阻单位 mΩ/Ω/kΩ/MΩ。

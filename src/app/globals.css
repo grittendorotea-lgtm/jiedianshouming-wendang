@@ -63,4 +63,7 @@
   .lg\\:hidden {
     display: none !important;
   }
+  figure {
+    break-inside: avoid;
+  }
 }

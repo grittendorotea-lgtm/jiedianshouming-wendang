@@ -25,7 +25,8 @@ export default function PrintPage() {
         接点接触电阻在线监测系统功能实现分析
       </h1>
       <p className="mt-4 leading-8 text-slate-600">
-        前十五节对照基础版源码；第十六节单独写 4 拖 1 方案。浏览器打印即可导出 PDF。
+        前十五节对照基础版源码；第十六节单独写 4 拖 1
+        方案。正文含操作流程、通信时序和流程图。浏览器打印即可导出 PDF。
       </p>
       <div className="mt-10 space-y-14">
         <PartOne />

@@ -1,13 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
+import { ArrowDown, ChartNode, Figure, LayerStack, VChart } from "../flowchart";
 
 export function PartOne() {
   return (
     <>
       <Section id="overview" kicker="第一节" title="系统概述">
         <p>
-          本系统为<strong>接点接触电阻在线监测与寿命试验软件</strong>。试品触点在周期性开合过程中，上位机按凸轮节拍采集三路接触电阻与一路回路电流，生成“动作次数—电阻/电流”曲线，并在电阻超限、电流超限、凸轮卡滞或达到设定次数时自动停机、记录故障。软件包名为
+          本软件是密封电器、继电器接点的<strong>接触电阻在线监测与寿命试验上位机</strong>。试品触点周期性开合时，上位机按凸轮节拍采集三路接触电阻与一路回路电流，生成“动作次数—电阻/电流”曲线，并在电阻超限、电流超限、凸轮卡滞或达到设定次数时自动停机、记录故障。试验曲线和故障记录写入数据库，可按测试编号回放。软件包名为
           <code className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 text-[13px]">com.ytzg.sealer</code>
           ，主界面为 <code className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 text-[13px]">ZzhejiPanel</code>，图表标题为“接点接触电阻参数曲线”。
         </p>
@@ -31,7 +32,7 @@ export function PartOne() {
         <Callout title="系统定位" tone="idea">
           本系统面向密封电器接点试验。上位机采用 Java Swing 与 JFreeChart
           实现人机界面和实时曲线，采用 jSerialComm 完成 RS-485 Modbus-RTU
-          通信，采用 JDBC 持久化试验曲线与故障记录。其核心能力是节拍同步采集、多维保护停机与历史可追溯，而不仅是曲线显示。
+          通信，采用 JDBC 持久化试验曲线与故障记录。其核心工作不是单独画图，而是在单串口多从站条件下，把三路微欧电阻和一路电流对齐到同一次动作上，并在电阻、电流、机构、次数四个维度自动停机。
         </Callout>
       </Section>
 
@@ -76,6 +77,27 @@ export function PartOne() {
             </CardContent>
           </Card>
         </div>
+        <Figure no="2-1" title="系统三层结构">
+          <LayerStack
+            layers={[
+              {
+                title: "人机交互层　ZzhejiPanel",
+                detail: "编号、日期、次数、速度、三路电阻、一路电流、启停保存、双 Y 轴曲线",
+                tone: "ui",
+              },
+              {
+                title: "设备通信层　DianZu00000 / JiaoL / RRuANDWone",
+                detail: "共用 COM3、9600、Modbus-RTU；按凸轮节拍轮流占用串口",
+                tone: "comm",
+              },
+              {
+                title: "数据访问层　ExecuteCommon",
+                detail: "d_dianzumax、allcount、test_results、policetime",
+                tone: "data",
+              },
+            ]}
+          />
+        </Figure>
         <Sub title="单串口时分复用">
           <p>
             <code>DianZu00000</code>、<code>JiaoL</code>、
@@ -93,8 +115,26 @@ export function PartOne() {
           />
           <p>
             该约束可概括为单总线时分复用：RS-485
-            上同时挂接 PLC 与多块仪表，上位机依据开关量节拍决定当前访问对象。
+            上同时挂接 PLC 与多块仪表，上位机依据开关量节拍决定当前访问对象。同一物理口不能同时被三个
+            Java 串口对象打开，因此必须“先关 PLC 口，再打开仪表口，读完立刻归还”。
           </p>
+          <Figure no="2-2" title="单串口时分复用流程">
+            <VChart>
+              <ChartNode kind="start">PLC 占用 COM3，循环读 X1/X2</ChartNode>
+              <ArrowDown />
+              <ChartNode>X1 到位：关 PLC 口</ChartNode>
+              <ArrowDown />
+              <ChartNode kind="io">DianZu00000 读从站 2/3/4</ChartNode>
+              <ArrowDown />
+              <ChartNode>关电阻仪口，交还 PLC</ChartNode>
+              <ArrowDown />
+              <ChartNode>X2 到位：关 PLC 口</ChartNode>
+              <ArrowDown />
+              <ChartNode kind="io">JiaoL 读从站 1</ChartNode>
+              <ArrowDown />
+              <ChartNode kind="end">关电流表口，进入下一拍</ChartNode>
+            </VChart>
+          </Figure>
         </Sub>
       </Section>
 

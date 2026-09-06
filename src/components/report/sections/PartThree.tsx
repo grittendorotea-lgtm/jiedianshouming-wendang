@@ -1,4 +1,12 @@
 import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
+import {
+  ArrowDown,
+  ChartNode,
+  Decision,
+  Figure,
+  Split,
+  VChart,
+} from "../flowchart";
 
 export function PartThree() {
   return (
@@ -9,8 +17,40 @@ export function PartThree() {
         title="保护停机机制"
       >
         <p>
-          试验台会长时间连续动作，软件必须能自己停下来，否则触点烧蚀或机械卡死会损坏设备。实现上分成“数值保护”和“机构保护”两类。
+          试验台会长时间连续动作，软件必须能自己停下来，否则触点烧蚀或机械卡死会损坏设备。实现上分成“数值保护”和“机构保护”两类。电阻上限来自数据库，电流上限写死为
+          2.1 A，凸轮超时 12 秒，次数上限来自 <code>testcount</code>
+          。任一类成立后都向 PLC 写停机和报警，并向 <code>policetime</code>{" "}
+          记一条故障。
         </p>
+        <Figure no="9-1" title="四类保护停机判定">
+          <VChart>
+            <ChartNode kind="start">本拍采集结束</ChartNode>
+            <ArrowDown />
+            <Decision>电阻 &gt; dianzumax？</Decision>
+            <Split
+              left={<ChartNode kind="end">停机，记电阻值故障</ChartNode>}
+              right={<ChartNode>继续</ChartNode>}
+            />
+            <ArrowDown />
+            <Decision>电流 &gt; 2.1 A？</Decision>
+            <Split
+              left={<ChartNode kind="end">停机，记电流值故障</ChartNode>}
+              right={<ChartNode>继续</ChartNode>}
+            />
+            <ArrowDown />
+            <Decision>凸轮灭灯 &gt; 12 s？</Decision>
+            <Split
+              left={<ChartNode kind="end">停机，记凸轮转动故障</ChartNode>}
+              right={<ChartNode>继续</ChartNode>}
+            />
+            <ArrowDown />
+            <Decision>次数 ≥ testcount？</Decision>
+            <Split
+              left={<ChartNode kind="end">停机，提示次数已到</ChartNode>}
+              right={<ChartNode>进入下一拍</ChartNode>}
+            />
+          </VChart>
+        </Figure>
         <Sub title="1）接触电阻超限">
           <p>
             上限不写死在代码里，而是{" "}
@@ -159,6 +199,36 @@ export function PartThree() {
         kicker="第十一节"
         title="数据存储与回放"
       >
+        <p>
+          每个采样点对应 <code>test_results</code>{" "}
+          中一行，包含日期、编号、次数和四条曲线的坐标。保存使用 JDBC
+          批处理事务：全部成功则提交，失败则回滚。新编号从第 0
+          点全量写入；已回显的旧编号只从 <code>loadedPointCount</code>{" "}
+          起追加，从而实现同一试品的分段试验。
+        </p>
+        <Figure no="11-1" title="试验数据保存与回放">
+          <VChart>
+            <ChartNode kind="start">点“保存”</ChartNode>
+            <ArrowDown />
+            <Decision>编号、次数、曲线是否齐全？</Decision>
+            <Split
+              left={<ChartNode>继续</ChartNode>}
+              right={<ChartNode kind="end">提示后返回</ChartNode>}
+            />
+            <ArrowDown />
+            <Decision>编号已存在且等于回显编号？</Decision>
+            <Split
+              left={<ChartNode>从 loadedPointCount 追加</ChartNode>}
+              right={<ChartNode>从第 0 点全量写入</ChartNode>}
+            />
+            <ArrowDown />
+            <ChartNode kind="io">saveTestResultsBatch 事务提交</ChartNode>
+            <ArrowDown />
+            <ChartNode>累计次数增加新增点数×2</ChartNode>
+            <ArrowDown />
+            <ChartNode kind="end">可选：按编号回放历史曲线</ChartNode>
+          </VChart>
+        </Figure>
         <Sub title="1）保存前的校验">
           <p>点“保存”后先取日期、编号、监测次数：</p>
           <ul className="list-disc space-y-1 pl-5">

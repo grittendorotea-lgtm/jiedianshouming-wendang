@@ -182,10 +182,20 @@ export function ReportApp() {
             </h1>
             <p className="mt-4 text-[16px] leading-8 text-slate-600">
               依据 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon
-              源码，将系统归纳为 15 项功能，并按 15
-              节说明各模块的实现方法。第十六节单独写 4 拖 1
-              多工位方案，不拆进前面各节。
+              源码，将系统归纳为 15 项功能并说明实现方法。第十六节单独写 4 拖 1
+              多工位方案。正文吸收课题报告常用写法：操作员流程、一拍通信时序、界面对照和分层流程图。
             </p>
+            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4">
+              <p className="text-sm font-semibold text-amber-950">摘要</p>
+              <p className="mt-2 text-[14.5px] leading-7 text-slate-700">
+                针对密封电器接点寿命试验，设计并实现了一套上位机软件。系统以凸轮开关量为节拍，在
+                RS-485 单总线上时分访问 PLC、三路接触电阻表和一路电流表，完成在线采集、双坐标实时曲线、四类保护停机和按编号回放。后续 4
+                拖 1 方案将控制与测量分到 COM4、COM5，由统一读取器轮询八台仪表，使一台上位机并行管理四台设备。
+              </p>
+              <p className="mt-2 text-[13px] text-slate-600">
+                关键词：接点接触电阻；寿命试验；Modbus-RTU；节拍同步采集；4拖1
+              </p>
+            </div>
           </header>
 
           <div className="max-w-3xl space-y-16">

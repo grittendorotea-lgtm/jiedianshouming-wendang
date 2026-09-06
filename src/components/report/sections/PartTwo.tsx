@@ -1,4 +1,12 @@
 import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
+import {
+  ArrowDown,
+  ChartNode,
+  Decision,
+  Figure,
+  Split,
+  VChart,
+} from "../flowchart";
 
 export function PartTwo() {
   return (
@@ -174,11 +182,65 @@ return new Result(value, value5);`}</CodeBlock>
             → 换串口读表 → 刷新界面 → 判超限”的循环。
           </p>
         </Sub>
-        <Sub title="操作流程">
+        <Figure no="7-1" title="试验主循环">
+          <VChart>
+            <ChartNode kind="start">开始测试：PLC 寄存器 1 写 0</ChartNode>
+            <ArrowDown />
+            <ChartNode>读 X1 / X2</ChartNode>
+            <ArrowDown />
+            <Decision>X1 上升沿？</Decision>
+            <Split
+              left={
+                <VChart>
+                  <ChartNode kind="io">读三路电阻</ChartNode>
+                </VChart>
+              }
+              right={
+                <VChart>
+                  <ChartNode>判右侧凸轮是否超时</ChartNode>
+                </VChart>
+              }
+            />
+            <ArrowDown />
+            <Decision>X2 上升沿？</Decision>
+            <Split
+              left={
+                <VChart>
+                  <ChartNode kind="io">读一路电流</ChartNode>
+                </VChart>
+              }
+              right={
+                <VChart>
+                  <ChartNode>判左侧凸轮是否超时</ChartNode>
+                </VChart>
+              }
+            />
+            <ArrowDown />
+            <ChartNode>四路齐备则曲线加点，次数 +2</ChartNode>
+            <ArrowDown />
+            <Decision>超限或到次数？</Decision>
+            <Split
+              left={<ChartNode kind="end">停机报警入库</ChartNode>}
+              right={<ChartNode>延时 100ms，下一拍</ChartNode>}
+            />
+          </VChart>
+        </Figure>
+        <Sub title="操作员完整流程">
           <p>
-            进入界面后加载阈值、累计次数与历史编号；选择或输入编号后启动试验；右侧行程开关有效则采集电阻，左侧有效则采集电流；四路数据齐备后曲线加点并将次数加
-            2；满足保护条件则停机入库；试验结束后按编号保存，已有编号仅追加新点。退出时须复位沿标志与计时器，避免再次进入时漏采或误报凸轮超时。
+            操作员进入接点接触电阻试验界面后，系统自动加载电阻停机阈值、累计动作次数和历史试验编号。操作员输入或选择试验编号后启动测试，上位机向
+            PLC 发出运行指令，设备凸轮开始转动。每当右侧行程开关有效，系统释放串口并依次读取三路接触电阻；每当左侧行程开关有效，系统读取回路电流。四路数据同时刷新到界面后，折线图在当前动作次数处增加一个采样点，并按相邻右侧信号间隔计算动作速度。试验过程中若出现电阻超限、电流超限、凸轮超时或次数到达设定值，系统立即下达停机和报警指令。试验结束后，操作员可将本次曲线按编号保存；若编号已存在，则只追加新采样点，从而实现同一试品的分段试验与连续回放。退出时须复位沿标志、计时器和串口，避免下次误判凸轮超时或跳过采集。
           </p>
+          <Flow
+            steps={[
+              "进入界面：读取电阻上限、累计次数，去重填充编号下拉框，日期默认今天。",
+              "填写或选择测试编号。旧号回显历史曲线；新号不清空正在画的曲线。",
+              "点“开始测试”：PLC 寄存器 1 写 0，后台线程盯 X1/X2。",
+              "右侧凸轮到位读三路电阻，左侧到位读电流；四框齐了则加点，次数 +2，速度按 120/Δt 更新。",
+              "保护条件成立则停机、报警、弹窗，必要时写 policetime。",
+              "点“停止测试”打断任务并消报警；再点“保存”，新号全量、旧号追加。",
+              "点“退出”走 resetForNextEnter()：停任务、关串口、清曲线和沿标志，回到 Home。",
+            ]}
+          />
         </Sub>
         <Callout title="曲线刷新方式" tone="note">
           采集线程不直接调用 <code>series.add()</code>，仅更新文本框。四个显示框共用{" "}
