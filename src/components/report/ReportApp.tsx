@@ -66,7 +66,18 @@ export function ReportApp() {
         <a
           key={item.id}
           href={`#${item.id}`}
-          onClick={() => setOpen(false)}
+          onClick={(event) => {
+            event.preventDefault();
+            setActive(item.id);
+            setOpen(false);
+            window.history.replaceState(null, "", `#${item.id}`);
+            window.setTimeout(() => {
+              document.getElementById(item.id)?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              });
+            }, 80);
+          }}
           className={cn(
             "block rounded-md px-3 py-2.5 text-[14px] leading-6 transition-colors",
             active === item.id
