@@ -20,6 +20,10 @@ export default function PrintPage() {
         <Link href="/" className="text-primary underline-offset-4 hover:underline">
           返回阅读版
         </Link>
+        <span className="text-slate-400"> · </span>
+        <a href="/word" className="text-primary underline-offset-4 hover:underline">
+          下载 Word
+        </a>
         <span className="text-slate-400"> · 用浏览器打印可导出 PDF</span>
       </p>
       <p className="text-sm text-amber-800">课题报告整理稿 · 2026年7月</p>
@@ -29,8 +33,11 @@ export default function PrintPage() {
       <p className="mt-1 text-lg text-slate-700">功能实现与关键技术分析</p>
       <p className="mt-4 leading-8 text-slate-600">
         前十五节写基础版功能与关键技术，第十六节单独写 4 拖 1
-        方案，第十七节归纳重难点，第十八节按论文稿给出七层框图、公式与关键算法。浏览器打印即可导出
-        PDF。
+        方案，第十七节归纳重难点，第十八节按论文稿给出七层框图、公式与关键算法。可
+        <a href="/word" className="mx-1 text-primary underline-offset-4 hover:underline">
+          下载 Word
+        </a>
+        ，也可在浏览器打印导出 PDF。
       </p>
       <div className="mt-10 space-y-14">
         <PartOne />

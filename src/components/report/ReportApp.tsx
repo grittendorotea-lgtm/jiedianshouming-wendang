@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, List, Printer, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileDown, List, Printer, X } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -105,14 +105,24 @@ export function ReportApp() {
       <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
         第十六节为 4 拖 1，第十七节为重难点，第十八节按论文稿给出七层框图、公式与关键算法。点目录即可跳转。
       </p>
-      <Link
-        href="/print"
-        className="mt-4 inline-flex items-center gap-1.5 text-xs text-sidebar-primary hover:underline"
-        onClick={() => setOpen(false)}
-      >
-        <Printer className="h-3.5 w-3.5" />
-        打开打印稿
-      </Link>
+      <div className="mt-4 flex flex-col gap-2">
+        <a
+          href="/word"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-sidebar-primary hover:underline"
+          onClick={() => setOpen(false)}
+        >
+          <FileDown className="h-3.5 w-3.5" />
+          下载 Word
+        </a>
+        <Link
+          href="/print"
+          className="inline-flex items-center gap-1.5 text-xs text-sidebar-primary hover:underline"
+          onClick={() => setOpen(false)}
+        >
+          <Printer className="h-3.5 w-3.5" />
+          打开打印稿
+        </Link>
+      </div>
     </div>
   );
 
@@ -125,6 +135,11 @@ export function ReportApp() {
             <p className="truncate font-semibold text-slate-900">{current.label}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <Button variant="outline" size="icon" asChild>
+              <a href="/word" aria-label="下载 Word">
+                <FileDown className="h-4 w-4" />
+              </a>
+            </Button>
             <Button variant="outline" size="icon" asChild>
               <Link href="/print" aria-label="打开打印稿">
                 <Printer className="h-4 w-4" />
@@ -200,6 +215,20 @@ export function ReportApp() {
               对照源码整理。前十五节为基础实现，第十六节为 4 拖
               1，第十七节为重难点，第十八节按论文稿给出七层模块框图、公式 (1)–(13) 与关键算法。
             </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button asChild>
+                <a href="/word">
+                  <FileDown className="h-4 w-4" />
+                  下载 Word
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/print">
+                  <Printer className="h-4 w-4" />
+                  打开打印稿
+                </Link>
+              </Button>
+            </div>
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4">
               <p className="text-sm font-semibold text-amber-950">摘要</p>
               <p className="mt-2 text-[14.5px] leading-7 text-slate-700">
@@ -255,6 +284,10 @@ export function ReportApp() {
             <code>ZzhejiPanel-20260811.java</code>
             。PLC 读写类 RRuANDWone 未包含在这批文件中，其行为根据主界面调用还原。
             完整可粘贴正文见仓库 <code>docs/课题报告-功能实现分析.md</code>
+            。也可
+            <a href="/word" className="mx-1 text-primary underline-offset-4 hover:underline">
+              下载 Word
+            </a>
             ，或打开
             <Link href="/print" className="mx-1 text-primary underline-offset-4 hover:underline">
               打印稿
