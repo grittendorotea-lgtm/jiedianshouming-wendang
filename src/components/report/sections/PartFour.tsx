@@ -279,7 +279,7 @@ for (int j = 0; j < length; j++) {
               },
               {
                 k: "退出",
-                v: "resetForNextEnter() 停任务、关串口、清曲线和标志，再回到 Home。",
+                v: "先执行 resetForNextEnter()：停 Timer、取消 Future、移除监听、关串口、复位 AtomicBoolean 和时间变量，再回 Home。避免下次继承上一次线程或串口占用。",
               },
               {
                 k: "清除（已布局未放置）",
@@ -297,30 +297,121 @@ for (int j = 0; j < length; j++) {
       <Section
         id="conclusion"
         kicker="第十五节"
-        title="总结与展望"
+        title="关键技术与总结"
       >
-        <p>
-          本系统实现了接点接触电阻试验的在线采集、实时监测、保护停机、故障记录与历史回放，形成“节拍同步采集—多仪表解析—双坐标曲线—数据库存储”的闭环。其主要工作在于：在单串口、多从站条件下，以凸轮开关量为同步信号，将三路接触电阻与一路电流对齐至同一动作周期，并在电阻、电流、机构状态和试验次数四个维度实施自动停机。
-        </p>
-        <p>对照源码可以指出的局限如下，比空泛的“界面不够美观”更适合写进报告：</p>
-        <ul className="list-disc space-y-2 pl-5">
-          <li>
-            单串口访问依赖人工 close/open，没有统一调度器。总线一忙或关口失败，整拍会丢。
-          </li>
-          <li>
-            <code>DBConnection</code> 与 <code>JdbcDeal</code>{" "}
-            两套入口并存，这批文件里看不到连接池配置。
-          </li>
-          <li>三路电阻单位共用 <code>dianZUnit1</code>，最后一路会覆盖前两路。</li>
-          <li>电流阈值写死 2.1 A，现场改门槛要改代码。</li>
-          <li>界面为 1620×950 绝对布局，换分辨率容易错位。</li>
-        </ul>
-        <p>
-          后续可将串口访问收敛为调度组件，将电阻上限、电流上限、凸轮超时和次数上限全部参数化入库，并将曲线存储拆成试验主表与采样点表，避免每个点重复存日期和编号。
-        </p>
-        <Callout title="核心工作表述" tone="idea">
-          系统解决的工程问题是节拍对齐与安全停机，而不是单独完成折线绘图。答辩与结论中建议强调：单总线时分复用、凸轮同步采集，以及电阻、电流、机构、次数四类保护。
-        </Callout>
+        <Sub title="5.1 核心技术">
+          <KvTable
+            rows={[
+              {
+                k: "状态驱动式测试",
+                v: "不以固定周期读全部传感器。第一状态触发电阻，第二状态触发电流，状态变化算速度，状态长时间不变判机械故障。",
+              },
+              {
+                k: "多源数据协同采集",
+                v: "PLC 读输入寄存器，电阻同步问表，电流事件监听。业务层把不同来源组织成一个测试周期。",
+              },
+              {
+                k: "后台线程与界面分离",
+                v: "测试循环在 ExecutorService，界面更新回 EDT。AtomicBoolean 保证某一输入持续为 1 时只处理一次。",
+              },
+              {
+                k: "实时质量判定与联锁",
+                v: "每个循环比较电阻、电流和动作时间，异常立即停机记录，形成采集—判定—控制闭环。",
+              },
+              {
+                k: "数据追溯与试验恢复",
+                v: "test_results 保存过程曲线，policetime 保存异常；loadedPointCount 保证续测只写新增点。",
+              },
+            ]}
+          />
+        </Sub>
+        <Sub title="5.2 答辩应突出的三条主线">
+          <p>
+            不建议把主要篇幅放在按钮颜色、字体、绝对坐标等界面细节上，而应突出：
+          </p>
+          <ol className="list-decimal space-y-2 pl-5">
+            <li>
+              <strong>状态驱动自动测试：</strong>
+              以 PLC/IO 状态识别机械位置，通过状态变化控制不同测量任务的执行时机。
+            </li>
+            <li>
+              <strong>多源参数实时监测：</strong>
+              同步组织三路接触电阻、一路电流、速度和测试次数，并用双 Y 轴趋势图可视化。
+            </li>
+            <li>
+              <strong>安全联锁与数据追溯：</strong>
+              电阻、电流、机构动作或寿命次数异常时自动停机，并通过数据库保存测试过程和故障事件。
+            </li>
+          </ol>
+        </Sub>
+        <Sub title="5.3 总结表述">
+          <p>
+            本系统以 PLC
+            机械状态为测试时序依据，通过串口与 Modbus RTU
+            协议协调三路接触电阻检测模块、电流检测模块及设备控制模块，在后台线程中完成自动循环测试；同时利用
+            Swing 和 JFreeChart
+            实时显示测试参数及趋势曲线，并结合数据库实现测试数据、累计寿命与异常信息的持久化管理。当出现接触电阻超限、电流超限、机构动作超时或达到设定次数等情况时，系统能够自动执行停机和故障记录，从而形成“控制—采集—分析—报警—存储—追溯”的闭环测试流程。
+          </p>
+        </Sub>
+        <Sub title="5.4 可能被问到的关键问题">
+          <div className="overflow-x-auto rounded-lg border border-border bg-white">
+            <table className="w-full min-w-[36rem] text-left text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="px-3 py-2">可能问题</th>
+                  <th className="px-3 py-2">回答要点</th>
+                </tr>
+              </thead>
+              <tbody className="text-slate-700">
+                {[
+                  [
+                    "为什么要用后台线程？",
+                    "硬件读取包含串口打开、请求、等待和循环。放在 Swing 事件线程会导致界面卡死，因此测试循环放在 ExecutorService 中，界面更新再回到 EDT。",
+                  ],
+                  [
+                    "为什么电阻和电流不同时读取？",
+                    "软件不是定时全量采集，而是根据两个 PLC 状态位区分机械阶段：第一状态触发电阻，第二状态触发电流，使采样与机构位置同步。",
+                  ],
+                  [
+                    "为什么需要 CRC？",
+                    "串口可能受干扰。CRC16 验证接收帧完整性，校验失败的数据不进入数值解析和合格性判断。",
+                  ],
+                  [
+                    "为什么使用双 Y 轴？",
+                    "接触电阻单位为 mΩ，电流单位为 A，量纲和数值范围不同，双 Y 轴可在同一 X 轴下同时观察趋势。",
+                  ],
+                  [
+                    "历史续测如何避免重复保存？",
+                    "加载历史时记录 loadedPointCount，续测保存只从该索引之后收集新增曲线点。",
+                  ],
+                  [
+                    "软件如何保证异常时停止设备？",
+                    "主循环实时检查电阻、电流、机械动作时间和设定次数，异常时向控制寄存器写入停止/报警并结束循环，同时保存故障。",
+                  ],
+                ].map((row) => (
+                  <tr key={row[0]} className="border-t border-border align-top">
+                    <td className="px-3 py-2 font-medium">{row[0]}</td>
+                    <td className="px-3 py-2 leading-7">{row[1]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Sub>
+        <Sub title="5.5 不足与改进">
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              COM3 分时复用依赖人工 close/open。异常路径若未及时释放端口，下一模块可能无法通信。宜抽统一
+              SerialPortManager。
+            </li>
+            <li>
+              <code>DBConnection</code> 与 <code>JdbcDeal</code> 两套入口并存。
+            </li>
+            <li>三路电阻单位共用 <code>dianZUnit1</code>。</li>
+            <li>电流阈值写死 2.1 A。</li>
+            <li>界面为 1620×950 绝对布局。</li>
+          </ul>
+        </Sub>
       </Section>
     </>
   );

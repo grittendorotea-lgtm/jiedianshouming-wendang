@@ -8,91 +8,110 @@ export function PartOne() {
     <>
       <Section id="overview" kicker="第一节" title="系统概述">
         <p>
-          本软件是密封电器、继电器接点的<strong>接触电阻在线监测与寿命试验上位机</strong>。试品触点周期性开合时，上位机按凸轮节拍采集三路接触电阻与一路回路电流，生成“动作次数—电阻/电流”曲线，并在电阻超限、电流超限、凸轮卡滞或达到设定次数时自动停机、记录故障。试验曲线和故障记录写入数据库，可按测试编号回放。软件包名为
-          <code className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 text-[13px]">com.ytzg.sealer</code>
-          ，主界面为 <code className="mx-1 rounded bg-slate-100 px-1.5 py-0.5 text-[13px]">ZzhejiPanel</code>，图表标题为“接点接触电阻参数曲线”。
+          该软件是一套<strong>电气接点寿命试验的自动测试与实时监测系统</strong>。系统通过
+          PLC/IO 状态判断机械机构的动作阶段，在不同状态下分时读取三路接触电阻和一路电流，并将采集结果用于实时显示、趋势分析、异常判断、联锁停机、故障记录及历史追溯。
         </p>
         <p>
-          两份 <code>ExecuteCommon.java</code> 源码一致，按同一数据访问类分析。系统闭环由以下四部分构成：
+          从功能闭环看，软件实现了“设备控制—状态识别—参数采集—实时可视化—异常保护—数据存储—历史数据恢复”的完整测试过程。
+          <code>ZzhejiPanel</code> 承担主界面与业务控制，
+          <code>DianZu00000</code> 负责三路接触电阻采集，
+          <code>JiaoL</code> 负责电流采集；同时还依赖{" "}
+          <code>RRuANDWone</code>、<code>ExecuteCommon</code>、
+          <code>JdbcDeal</code> 等控制与数据库类。包名为{" "}
+          <code>com.ytzg.sealer</code>，图表标题为“接点接触电阻参数曲线”。
         </p>
-        <ul className="list-disc space-y-1 pl-5">
-          <li>
-            <strong>ZzhejiPanel</strong>：测试主界面、测试状态机、曲线、保存、报警、历史回显。
-          </li>
-          <li>
-            <strong>DianZu00000</strong>：按 Modbus 轮询从站 2、3、4，读三路电阻。
-          </li>
-          <li>
-            <strong>JiaoL</strong>：按 Modbus 读从站 1 的电流。
-          </li>
-          <li>
-            <strong>ExecuteCommon</strong>：读写阈值、最大次数、累计次数，并批量保存曲线点。
-          </li>
-        </ul>
+        <Sub title="1.1 系统核心目标">
+          <ul className="list-disc space-y-1 pl-5">
+            <li>在试验过程中自动控制设备启停，减少人工反复操作。</li>
+            <li>
+              根据 PLC 输入状态识别机械动作位置，并在合适的动作阶段触发电阻或电流测量。
+            </li>
+            <li>实时采集三路接触电阻与一路工作电流，形成完整的多参数监测数据。</li>
+            <li>将电阻、电流、速度、测试次数等信息实时显示并绘制趋势曲线。</li>
+            <li>
+              对电阻超限、电流超限、机械动作超时及达到设定测试次数等情况执行自动停机和报警。
+            </li>
+            <li>
+              将正常测试数据与故障信息写入数据库，为后续查询、续测和质量追溯提供依据。
+            </li>
+          </ul>
+        </Sub>
         <Callout title="系统定位" tone="idea">
-          本系统面向密封电器接点试验。上位机采用 Java Swing 与 JFreeChart
-          实现人机界面和实时曲线，采用 jSerialComm 完成 RS-485 Modbus-RTU
-          通信，采用 JDBC 持久化试验曲线与故障记录。其核心工作不是单独画图，而是在单串口多从站条件下，把三路微欧电阻和一路电流对齐到同一次动作上，并在电阻、电流、机构、次数四个维度自动停机。
+          本系统既是数据采集系统，也是设备安全控制与质量监测系统。核心不是单独画图，而是以
+          PLC 状态驱动测试时序，把三路微欧电阻和一路电流对齐到同一次机械动作上，并形成“采集—判定—控制”闭环。
         </Callout>
       </Section>
 
       <Section id="arch" kicker="第二节" title="总体架构">
         <p>
-          软件按工业上位机惯例划分为三层：人机交互层负责显示与操作；设备通信层独占
-          COM3，按时间片依次访问 PLC、电阻仪与电流表；数据访问层将参数、曲线和故障记录写入数据库。
+          按软件职责划分为四层。人机交互层向操作人员展示状态并接收操作；业务控制层决定何时读设备、何时采集、何时报警；硬件通信层通过串口和
+          Modbus 与 PLC、电阻模块、电流模块通信；数据持久层负责试验结果、累计次数和故障信息的保存与恢复。
         </p>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <Badge variant="chart">界面层</Badge>
+              <Badge variant="chart">人机交互层</Badge>
               <CardTitle className="pt-2 text-base">ZzhejiPanel</CardTitle>
             </CardHeader>
             <CardContent className="text-sm leading-7 text-slate-600">
-              测试编号、日期、次数、速度、三路电阻、一路电流、开始/停止/保存、双
-              Y 轴曲线、滚动条、曲线显隐。
+              测试编号、日期、次数、速度、三路电阻、电流、操作按钮与双 Y 轴曲线。界面既是参数输入端，也是实时状态显示端。
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <Badge variant="plc">通信层</Badge>
+              <Badge variant="plc">业务控制层</Badge>
+              <CardTitle className="pt-2 text-base">测试主循环</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm leading-7 text-slate-600">
+              启停控制、状态判断、速度计算、超限判断、故障联锁、历史续测与增量保存。
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Badge variant="current">硬件通信层</Badge>
               <CardTitle className="pt-2 text-base">
-                DianZu00000 / JiaoL / RRuANDWone
+                RRuANDWone / DianZu00000 / JiaoL
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm leading-7 text-slate-600">
-              全部挂在 COM3、9600。PLC
-              负责启停和凸轮开关量；电阻仪、电流表在 PLC
-              给出节拍后再临时占用串口。
+              共用 COM3、9600、Modbus-RTU。PLC 平时占口，电阻仪和电流表在对应状态到位后再临时占用。
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <Badge variant="db">数据层</Badge>
-              <CardTitle className="pt-2 text-base">ExecuteCommon</CardTitle>
+              <Badge variant="db">数据持久层</Badge>
+              <CardTitle className="pt-2 text-base">
+                JdbcDeal / ExecuteCommon
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-sm leading-7 text-slate-600">
               表 <code>d_dianzumax</code>、<code>allcount</code>、
-              <code>test_results</code>、<code>policetime</code>。曲线用 JDBC
-              批处理一次写入。
+              <code>test_results</code>、<code>policetime</code>
+              。曲线批插带事务，故障记录供追溯。
             </CardContent>
           </Card>
         </div>
-        <Figure no="2-1" title="系统三层结构">
+        <Figure no="2-1" title="系统四层结构">
           <LayerStack
             layers={[
               {
                 title: "人机交互层　ZzhejiPanel",
-                detail: "编号、日期、次数、速度、三路电阻、一路电流、启停保存、双 Y 轴曲线",
+                detail: "编号 / 日期 / 次数 / 速度 / 曲线 / 按钮",
                 tone: "ui",
               },
               {
-                title: "设备通信层　DianZu00000 / JiaoL / RRuANDWone",
-                detail: "共用 COM3、9600、Modbus-RTU；按凸轮节拍轮流占用串口",
+                title: "业务控制层",
+                detail: "启停控制 · 状态判断 · 速度计算 · 超限判断 · 故障联锁 · 增量保存",
                 tone: "comm",
               },
               {
-                title: "数据访问层　ExecuteCommon",
-                detail: "d_dianzumax、allcount、test_results、policetime",
+                title: "硬件通信层　RRuANDWone / DianZu00000 / JiaoL",
+                detail: "jSerialComm · Modbus RTU · COM3 9600",
+                tone: "dev",
+              },
+              {
+                title: "数据持久层　JdbcDeal / ExecuteCommon",
+                detail: "test_results · policetime · d_dianzumax · allcount",
                 tone: "data",
               },
             ]}
@@ -116,9 +135,10 @@ export function PartOne() {
           <p>
             该约束可概括为单总线时分复用：RS-485
             上同时挂接 PLC 与多块仪表，上位机依据开关量节拍决定当前访问对象。同一物理口不能同时被三个
-            Java 串口对象打开，因此必须“先关 PLC 口，再打开仪表口，读完立刻归还”。
+            Java 串口对象打开，因此必须“先关 PLC 口，再打开仪表口，读完立刻归还”。任何异常路径如果未及时释放端口，下一模块可能因
+            COM3 被占用而无法通信。后续可设计统一 SerialPortManager 集中调度。
           </p>
-          <Figure no="2-2" title="单串口时分复用流程">
+          <Figure no="2-2" title="COM3 分时复用流程">
             <VChart>
               <ChartNode kind="start">PLC 占用 COM3，循环读 X1/X2</ChartNode>
               <ArrowDown />
@@ -136,43 +156,73 @@ export function PartOne() {
             </VChart>
           </Figure>
         </Sub>
+        <Sub title="2.2 项目使用的主要技术">
+          <KvTable
+            rows={[
+              {
+                k: "Java Swing",
+                v: "JPanel、JButton、JTextField、JComboBox 完成人机交互；FlatLaf 优化观感。",
+              },
+              {
+                k: "JFreeChart",
+                v: "三路电阻左轴、电流右轴。支持显隐、最近点查看、滚动和范围调整。",
+              },
+              {
+                k: "jSerialComm",
+                v: "与 PLC、电阻仪、电流表通信。基础版 COM3、9600 bit/s。",
+              },
+              {
+                k: "Modbus RTU",
+                v: "按地址、功能码、寄存器和 CRC16 组帧；校验失败的数据不参与判定。",
+              },
+              {
+                k: "多线程",
+                v: "ExecutorService / Future 跑正式测试；界面更新回到 EDT；AtomicBoolean 做沿闭锁。",
+              },
+              {
+                k: "JDBC",
+                v: "PreparedStatement 参数化。曲线批插关自动提交，成功 commit，失败 rollback。",
+              },
+              {
+                k: "事件驱动",
+                v: "按钮 ActionListener，文本框 DocumentListener，电流 SerialPortDataListener。",
+              },
+            ]}
+          />
+        </Sub>
       </Section>
 
-      <Section id="features" kicker="第三节" title="功能组成">
+      <Section id="features" kicker="第三节" title="系统总体功能">
         <p>
-          按可独立描述的业务能力归纳，系统实现以下 15 项功能。后文第 4 节至第 14 节说明其实现方法。
+          操作人员在同一窗口完成编号录入、日期确认、测试启动、参数观察、曲线查看、结果保存和退出复位。后文第
+          4 节至第 14 节按实现展开。
         </p>
         <div className="overflow-x-auto rounded-lg border border-border bg-white">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[36rem] text-left text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                <th className="px-3 py-2">编号</th>
-                <th className="px-3 py-2">功能</th>
-                <th className="px-3 py-2">主要实现位置</th>
+                <th className="px-3 py-2">序号</th>
+                <th className="px-3 py-2">功能模块</th>
+                <th className="px-3 py-2">主要作用</th>
               </tr>
             </thead>
             <tbody className="text-slate-700">
               {[
-                ["F1", "三路接触电阻在线采集", "DianZu00000"],
-                ["F2", "回路电流在线采集", "JiaoL"],
-                ["F3", "PLC 运行控制与报警输出", "RRuANDWone"],
-                ["F4", "凸轮到位信号监测", "readAndProcessRegisters"],
-                ["F5", "节拍同步试验控制", "ZzhejiPanel 试验循环"],
-                ["F6", "动作速度实时测算", "v = 120 / Δt"],
-                ["F7", "接触电阻超限保护", "pureValue 与 dianzumax"],
-                ["F8", "电流超限保护", "dianliu1Value1 > 2.1 A"],
-                ["F9", "凸轮卡滞超时保护", "X1/X2 无效超过 12 s"],
-                ["F10", "试验次数上限控制", "timeSeconds 与 testcount"],
-                ["F11", "双纵坐标实时曲线监测", "JFreeChart"],
-                ["F12", "试验数据批量存储与追加", "saveTestResultsBatch"],
-                ["F13", "历史曲线按编号回放", "loadSelectedTestResultToChart"],
-                ["F14", "试验参数与累计次数管理", "d_dianzumax / allcount"],
-                ["F15", "故障停机记录", "policetime"],
+                ["1", "测试参数与界面管理", "显示编号、日期、次数、速度、累计次数、三路电阻、电流及操作按钮。"],
+                ["2", "测试编号与历史数据管理", "支持输入新编号，也支持选择旧编号并加载历史曲线。"],
+                ["3", "测试启动/停止控制", "按钮切换测试状态，并向 PLC 发送启停指令。"],
+                ["4", "PLC 状态监测", "读取两个输入寄存器，作为电阻、电流采集和速度计算的触发条件。"],
+                ["5", "三路接触电阻采集", "Modbus RTU 读取地址 2、3、4 三个测量通道。"],
+                ["6", "电流采集", "串口事件监听方式读取电流检测模块。"],
+                ["7", "实时曲线显示", "JFreeChart 构建三路电阻与一路电流双 Y 轴趋势图。"],
+                ["8", "速度与次数统计", "用 PLC 状态间隔计算速度，并维护当前/累计测试次数。"],
+                ["9", "故障检测与安全联锁", "电阻、电流、机构动作、测试次数异常时自动停机报警。"],
+                ["10", "数据保存与追溯", "批量保存曲线，记录故障，支持历史回显和续测增量保存。"],
               ].map((row) => (
-                <tr key={row[0]} className="border-t border-border">
+                <tr key={row[0]} className="border-t border-border align-top">
                   <td className="px-3 py-2 font-medium">{row[0]}</td>
                   <td className="px-3 py-2">{row[1]}</td>
-                  <td className="px-3 py-2 text-slate-500">{row[2]}</td>
+                  <td className="px-3 py-2 text-slate-600">{row[2]}</td>
                 </tr>
               ))}
             </tbody>
@@ -189,7 +239,8 @@ export function PartOne() {
           类 <code>com.ytzg.sealer.plc.test.DianZu00000</code>{" "}
           专门负责三块电阻表。构造时绑定 COM3、波特率
           9600。它不用监听器持续收数，而是“打开串口 → 按地址轮询 →
-          解析 → 关闭串口”，刚好配合主界面的节拍式采集。
+          解析 → 关闭串口”。主循环只有在第一状态位（X1）满足条件时才释放
+          PLC 串口并调用本类，因此电阻采集是状态驱动，而不是定时全量轮询。
         </p>
         <Sub title="1）打开串口：失败就短间隔重试">
           <p>

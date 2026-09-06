@@ -14,8 +14,11 @@ export function PartTwo() {
       <Section id="i-collect" kicker="第五节" title="电流采集">
         <p>
           类 <code>com.ytzg.sealer.plc.JiaoL</code>{" "}
-          读的是电流表，不是电阻。命名来自“角/铰/绞”现场叫法或电流回路，界面标签写的是“电流”，单位是
-          mA / A。它和电阻类共用同一套 CRC 和组帧方法，但收数方式不同：电阻是同步轮询，电流是监听器异步收包。
+          读的是电流检测模块。界面标签写“电流”，单位是 mA / A。它和电阻类共用同一套
+          CRC 和组帧方法，但收数改为{" "}
+          <code>SerialPortDataListener</code>{" "}
+          监听 <code>LISTENING_EVENT_DATA_AVAILABLE</code>
+          。主循环在第二状态位（X2）有效时才启动本类：电阻是同步轮询，电流是事件到达后再解析。
         </p>
         <Sub title="1）打开口后只发一帧，靠监听器收应答">
           <p>
@@ -68,10 +71,11 @@ comPort.writeBytes(request, request.length);`}</CodeBlock>
         title="PLC通信与控制"
       >
         <p>
-          PLC 通信类 <code>RRuANDWone</code> 源码不在这 5
-          个文件里，但主界面把它用得很完整，可以还原出协议和用途。设备地址{" "}
-          <code>0x08</code>，读输入寄存器功能码 <code>0x04</code>，从寄存器 0
-          起读 2 个字。
+          <code>readAndProcessRegisters()</code>{" "}
+          是整个测试时序的关键方法。PLC 通信类{" "}
+          <code>RRuANDWone</code> 源码不在这批文件里，但主界面把它用得很完整：设备地址{" "}
+          <code>0x08</code>，功能码 <code>0x04</code>，从寄存器 0 起读 2
+          个字，并验证应答功能码确为 0x04。这两个状态不是单纯用于显示，而是决定“什么时候读电阻”“什么时候读电流”，同时还参与机械超时判定和速度计算。系统本质上是<strong>状态驱动式采集</strong>，而不是固定时间间隔轮询全部传感器。
         </p>
         <Sub title="1）读到的两个字分别是什么">
           <CodeBlock title="ZzhejiPanel.readAndProcessRegisters()">{`response = ruAndwone.readInputRegisters(0x08, 0, 2);
@@ -132,7 +136,8 @@ return new Result(value, value5);`}</CodeBlock>
         <p>
           试验过程由双层循环实现。外层 <code>continueLoop2</code>{" "}
           控制本次试验是否继续，内层 <code>continueLoop</code>{" "}
-          等待本拍电阻采集完成。源码注释明确要求先采集电阻、再采集电流，以避免电流信号保持有效时重复读表。
+          等待本拍电阻采集完成。源码注释明确要求先采集电阻、再采集电流，以避免电流信号保持有效时重复读表。软件不是定时全量采集，而是根据两个
+          PLC 状态位区分不同机械阶段，使采样与机构运动位置同步。
         </p>
         <Sub title="内循环在等什么">
           <p>
@@ -266,12 +271,11 @@ return new Result(value, value5);`}</CodeBlock>
 roundedFrequency111 = Math.round(frequency);
 suduTest.setText(String.valueOf(roundedFrequency111));`}</CodeBlock>
         <p>
-          公式是 <strong>v = 120 / Δt</strong>。若两次 X1
-          有效间隔是 2 秒，速度就是 60 次/分钟；间隔 4
-          秒就是 30 次/分钟。系数 120 相当于{" "}
-          <code>60 × 2</code>：把“半周期/单边凸轮间隔”换算成每分钟动作次数。曲线的
-          X 轴每次加点后 <code>timeSeconds += 2</code>
-          ，和这个“一次节拍记 2 次”是对齐的。
+          公式在代码里明确为 <strong>v = 120 / Δt</strong>
+          。若两次 X1 有效间隔是 2 秒，显示就是 60 次/分钟。曲线横坐标每次加点后{" "}
+          <code>timeSeconds += 2</code>
+          ，与“一个采样点折算 2 次动作”的保存逻辑一致。系数 120
+          的机械物理含义需结合实际机构确认，例如是否一次完整循环与该状态信号存在半周期关系；报告中不应在缺少硬件依据时自行解释。
         </p>
         <p>
           X1 回到 0 时把 <code>processedjishi1</code>{" "}

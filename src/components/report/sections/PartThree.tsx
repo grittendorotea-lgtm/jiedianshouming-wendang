@@ -51,6 +51,47 @@ export function PartThree() {
             />
           </VChart>
         </Figure>
+        <div className="overflow-x-auto rounded-lg border border-border bg-white">
+          <table className="w-full min-w-[36rem] text-left text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-3 py-2">判定类型</th>
+                <th className="px-3 py-2">触发条件（现有代码）</th>
+                <th className="px-3 py-2">系统处理</th>
+              </tr>
+            </thead>
+            <tbody className="text-slate-700">
+              <tr className="border-t align-top">
+                <td className="px-3 py-2 font-medium">接触电阻超限</td>
+                <td className="px-3 py-2">任一路 pureValue 大于数据库 dianzumax</td>
+                <td className="px-3 py-2">停机、报警、提示不合格通道、写入“电阻值故障”</td>
+              </tr>
+              <tr className="border-t align-top">
+                <td className="px-3 py-2 font-medium">电流超限</td>
+                <td className="px-3 py-2">dianliu1Value1 &gt; 2.1 A</td>
+                <td className="px-3 py-2">停机、报警、写入“电流值故障”</td>
+              </tr>
+              <tr className="border-t align-top">
+                <td className="px-3 py-2 font-medium">右侧机构超时</td>
+                <td className="px-3 py-2">第一状态持续异常超过约 12 s</td>
+                <td className="px-3 py-2">提示“设备右侧凸轮转动故障”、停机并记录</td>
+              </tr>
+              <tr className="border-t align-top">
+                <td className="px-3 py-2 font-medium">左侧机构超时</td>
+                <td className="px-3 py-2">第二状态持续异常超过约 12 s</td>
+                <td className="px-3 py-2">提示“设备左侧凸轮转动故障”、停机并记录</td>
+              </tr>
+              <tr className="border-t align-top">
+                <td className="px-3 py-2 font-medium">达到设定次数</td>
+                <td className="px-3 py-2">timeSeconds &gt;= countmax111</td>
+                <td className="px-3 py-2">停止设备并提示已达到设定测试次数</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          因此该软件不是测试结束后再判断合格与否，而是在每个循环中实时比较，形成“采集—判定—控制”闭环。
+        </p>
         <Sub title="1）接触电阻超限">
           <p>
             上限不写死在代码里，而是{" "}
@@ -129,7 +170,9 @@ export function PartThree() {
         <p>
           图表标题“接点接触电阻参数曲线”。左侧 Y 轴是电阻（mΩ），三条线：电阻1红、电阻2绿、电阻3蓝。右侧
           Y 轴是电流（A），黄褐色。X 轴是“次数”，不是时钟秒，虽然变量名叫{" "}
-          <code>timeSeconds</code>。
+          <code>timeSeconds</code>
+          。报告中应按测试次数或循环计数解释，不宜直接理解为时间秒数。一个完整采样点由“三路电阻
+          + 一路电流”共同组成，避免某一路尚未到达时提前绘制不完整记录。
         </p>
         <Sub title="1）数据集怎么挂到两根轴上">
           <p>
@@ -247,7 +290,8 @@ export function PartThree() {
             只有“编号已存在，并且等于当前回显编号{" "}
             <code>loadedTestBianHao</code>”才进入追加模式，从{" "}
             <code>loadedPointCount</code> 开始写；否则从第 0
-            个点整段保存。这样手动输入一个新编号时，不会把历史曲线清掉，也不会把旧点再插一遍。
+            个点整段保存。可概括为<strong>基于历史采样点索引的增量存储机制</strong>
+            ：加载历史后继续测试，不会把已经存在的曲线再写一遍。新编号也不会误清空正在画的曲线。
           </p>
           <CodeBlock title="每个点写成一行">{`dataToInsert.add(new Object[]{
     sqlTestTimeValue, testBianHaoValue, countTestText,

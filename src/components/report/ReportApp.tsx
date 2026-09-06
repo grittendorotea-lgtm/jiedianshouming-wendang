@@ -85,9 +85,9 @@ export function ReportApp() {
         课题报告
       </p>
       <h1 className="mt-2 text-lg font-semibold leading-7 text-sidebar-foreground">
-        接点接触电阻
+        继电器接点
         <br />
-        在线监测系统
+        寿命测试软件
       </h1>
       <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
         前十五节为基础实现，第十六节为 4 拖 1 方案。点目录即可跳转。
@@ -175,25 +175,28 @@ export function ReportApp() {
         <main className="min-w-0 flex-1 px-4 py-8 pb-28 md:px-10 md:py-12 lg:pb-12">
           <header className="mb-10 max-w-3xl">
             <p className="text-sm font-medium text-amber-800">
-              软件工程课题 · 功能实现分析
+              课题报告整理稿 · 2026年7月
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
-              接点接触电阻在线监测系统功能实现分析
+              继电器接点寿命测试软件
             </h1>
+            <p className="mt-2 text-lg text-slate-700">
+              功能实现与关键技术分析
+            </p>
             <p className="mt-4 text-[16px] leading-8 text-slate-600">
-              依据 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon
-              源码，将系统归纳为 15 项功能并说明实现方法。第十六节单独写 4 拖 1
-              多工位方案。正文吸收课题报告常用写法：操作员流程、一拍通信时序、界面对照和分层流程图。
+              对照源码整理。前十五节写基础版功能实现与关键技术，第十六节单独写 4
+              拖 1 多工位方案，并配分层流程图。
             </p>
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4">
               <p className="text-sm font-semibold text-amber-950">摘要</p>
               <p className="mt-2 text-[14.5px] leading-7 text-slate-700">
-                针对密封电器接点寿命试验，设计并实现了一套上位机软件。系统以凸轮开关量为节拍，在
-                RS-485 单总线上时分访问 PLC、三路接触电阻表和一路电流表，完成在线采集、双坐标实时曲线、四类保护停机和按编号回放。后续 4
-                拖 1 方案将控制与测量分到 COM4、COM5，由统一读取器轮询八台仪表，使一台上位机并行管理四台设备。
+                该软件是一套电气接点寿命试验的自动测试与实时监测系统。系统以
+                PLC/IO
+                状态识别机械动作阶段，分时读取三路接触电阻和一路电流，完成实时显示、趋势分析、联锁停机、故障记录和历史追溯，形成“控制—采集—分析—报警—存储—追溯”闭环。后续
+                4 拖 1 方案将控制与测量分到 COM4、COM5，由统一读取器轮询八台仪表。
               </p>
               <p className="mt-2 text-[13px] text-slate-600">
-                关键词：接点接触电阻；寿命试验；Modbus-RTU；节拍同步采集；4拖1
+                关键词：继电器接点寿命；状态驱动采集；Modbus-RTU；安全联锁；4拖1
               </p>
             </div>
           </header>

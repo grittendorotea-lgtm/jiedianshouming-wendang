@@ -13,7 +13,7 @@ export function PartFive() {
   return (
     <Section id="four-to-one" kicker="第十六节" title="4拖1方案的多工位拓展">
       <p>
-        前十五节只分析单工位基础版。本节依据{" "}
+        前十五节按课题报告整理稿分析单工位基础版。本节依据{" "}
         <code>ZzhejiPanel-20260811.java</code>（约 7200 行）和{" "}
         <code>SixMeterInstrumentReader.java</code>
         ，单独说明后来做成的<strong>4拖1方案</strong>：一台上位机、一块

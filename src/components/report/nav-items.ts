@@ -1,7 +1,7 @@
 export const navItems = [
   { id: "overview", label: "1. 系统概述" },
   { id: "arch", label: "2. 总体架构" },
-  { id: "features", label: "3. 功能组成" },
+  { id: "features", label: "3. 系统总体功能" },
   { id: "r-collect", label: "4. 接触电阻采集" },
   { id: "i-collect", label: "5. 电流采集" },
   { id: "plc", label: "6. PLC通信与控制" },
@@ -13,6 +13,6 @@ export const navItems = [
   { id: "db", label: "12. 数据库设计" },
   { id: "protocol", label: "13. 通信协议设计" },
   { id: "classes", label: "14. 软件结构" },
-  { id: "conclusion", label: "15. 总结与展望" },
+  { id: "conclusion", label: "15. 关键技术与总结" },
   { id: "four-to-one", label: "16. 4拖1方案拓展" },
 ] as const;
