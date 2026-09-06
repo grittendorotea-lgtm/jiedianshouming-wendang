@@ -1,4 +1,4 @@
-import { Callout, CodeBlock, ExtBox, Flow, KvTable, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
 
 export function PartThree() {
   return (
@@ -27,18 +27,6 @@ export function PartThree() {
               "continueLoop2 = false，整次试验结束。",
             ]}
           />
-          <ExtBox
-            title="F7 拓展：四套电阻阈值，只停本工位"
-            tech="getDianzumaxValue1～4、分线圈停机、状态灯 N、故障带设备号入库"
-          >
-            拓展后每个工位只比较本工位那一路电阻：设备 1 用{" "}
-            <code>getResistanceValue(5)</code> 对{" "}
-            <code>getDianzumaxValue1()</code>，设备 2/3/4 分别对阈值 2/3/4。超限后写本工位运行寄存器为
-            1，再写公共报警寄存器 5，并把该工位状态灯改成红色{" "}
-            <code>N</code>。邻站的 <code>isTestingStarted</code>{" "}
-            保持不变。难点是四套循环同时越过阈值时，停机写口必须交错延时，否则寄存器 5
-            的置位/复位会互相覆盖。
-          </ExtBox>
         </Sub>
         <Sub title="2）电流超限">
           <p>
@@ -48,18 +36,6 @@ export function PartThree() {
             <code>saveToPolicetimeTabledianliu()</code>
             ，会把具体安培数写进故障描述，说明后来补过更细的电流报警格式。
           </p>
-          <ExtBox
-            title="F8 拓展：四路电流各自与 2.1 A 比较"
-            tech="getCurrentValue(1～4)、通道隔离、缓存一致性"
-          >
-            电流上限仍写死为 2.1 A，但比较对象改成四个缓存通道。设备 1
-            取地址 01，设备 2/3/4 取 02/03/04。超限同样只停本工位、写寄存器 5
-            报警，并调用对应的{" "}
-            <code>saveToPolicetimeTabledianliu()</code>{" "}
-            系列方法，描述写成“电流值故障：x A”。难点是后台轮询约
-            800ms 才刷新一轮：保护判断读到的可能是上一拍缓存，四个工位必须各自持有一份{" "}
-            <code>dianliuNValueN</code>，绝不能共用一个电流变量。
-          </ExtBox>
         </Sub>
         <Sub title="3）左右凸轮超时">
           <p>
@@ -70,18 +46,6 @@ export function PartThree() {
             秒是现场经验阈值：正常节拍远小于 12 秒，卡住才会一直灭灯。上限
             10000 是为了避开计时器未初始化时的巨大时间差。
           </p>
-          <ExtBox
-            title="F9 拓展：四工位独立 12 s 凸轮超时"
-            tech="8 路输入字、四套 lastTime、saveToPolicetimeTableStop(shebeihao)"
-          >
-            一次读取 8 个输入字后，工位 1 用第 1/5 字、工位 2 用第 2/6
-            字，依此类推。某一侧持续无效超过 12 秒，只停该工位：状态灯改{" "}
-            <code>N</code>，写寄存器 5 和本工位运行位，弹“设备 i
-            凸轮转动故障”，再{" "}
-            <code>saveToPolicetimeTableStop(i, countTest)</code>{" "}
-            把 <code>Shebeihao</code> 写成 1～4。四套{" "}
-            <code>lastTime</code> 绝不能共用，否则邻站一次边沿会把本站超时计时清掉。
-          </ExtBox>
         </Sub>
         <Sub title="4）次数到达上限">
           <p>
@@ -92,17 +56,6 @@ export function PartThree() {
             <code>timeSeconds &gt;= countmax111</code>{" "}
             时停机报警，并提示“已达到设定测试次数”。
           </p>
-          <ExtBox
-            title="F10 拓展：四套次数上限独立截止"
-            tech="timeSeconds1～4、getTestmaxValue1～4、横坐标与累计次数分离"
-          >
-            每个页签有自己的 <code>timeSeconds</code> 和{" "}
-            <code>getTestmaxValue1/2/3/4()</code>
-            。曲线每加一个点仍把该工位横坐标加 2。先到上限的工位先停，其余工位继续做寿命试验。累计次数则按工位调用{" "}
-            <code>getAllcountValue1(1～4)</code> /{" "}
-            <code>updateAllcountValues(text, shebeihao)</code>
-            ，与单次试验上限分开存放。
-          </ExtBox>
         </Sub>
         <Sub title="报警记录怎么入库">
           <p>
@@ -125,16 +78,6 @@ export function PartThree() {
           <p>
             用的是 <code>JdbcDeal.getConnection()</code>，和曲线保存走同一套连接工具。
           </p>
-          <ExtBox
-            title="F15 拓展：故障台账增加设备号"
-            tech="INSERT … Shebeihao、电阻/电流/凸轮三类分方法、公共报警寄存器 5"
-          >
-            <code>policetime</code> 插入语句改为四列：次数、故障原文、时间、{" "}
-            <code>Shebeihao</code>
-            。电阻故障、电流故障各有四套方法，凸轮故障走统一的{" "}
-            <code>saveToPolicetimeTableStop(shebeihao, count)</code>
-            。事后可以按设备号查出是哪一台、哪一类保护停的机。
-          </ExtBox>
         </Sub>
       </Section>
 
@@ -148,17 +91,6 @@ export function PartThree() {
           Y 轴是电流（A），黄褐色。X 轴是“次数”，不是时钟秒，虽然变量名叫{" "}
           <code>timeSeconds</code>。
         </p>
-        <ExtBox
-          title="F11 拓展：四个页签、四张独立双轴图"
-          tech="JTabbedPane、四套 XYSeries、四套 DocumentListener、EDT 批量加点"
-        >
-          拓展后每个工位只绑一路电阻和一路电流，所以每张图是两条线，不再是三红绿蓝加一条电流。页签标题为“监测设备
-          1～4”。工位 1 监听 <code>dianzu111 / dianliu111</code>，两框都非空才往{" "}
-          <code>series1</code> 和 <code>rightSeries1</code>{" "}
-          加点。切换页签只改变可见性，后台四路监听器仍继续工作。难点是四套数据集同时{" "}
-          <code>invokeLater</code> 重绘时不能堵塞 EDT，也要避免把设备 2
-          的点加进设备 1 的系列。
-        </ExtBox>
         <Sub title="1）数据集怎么挂到两根轴上">
           <p>
             <code>ChartFactory.createXYLineChart</code>{" "}
@@ -257,20 +189,6 @@ int rowsInserted = ExecuteCommon.saveTestResultsBatch(dataToInsert);`}</CodeBloc
             也就是：<strong>曲线上的一个采样点 = 数据库里的一条记录</strong>
             ，四个系列的 X/Y 并排存放，而不是每种曲线一张表。
           </p>
-          <ExtBox
-            title="F12 拓展：按工位批插，SwingWorker 避免卡死"
-            tech="SwingWorker、LoadingGifDialog、行末设备号、按工位查重"
-          >
-            每个页签各有保存按钮。校验通过后弹出{" "}
-            <code>LoadingGifDialog</code>，在{" "}
-            <code>SwingWorker.doInBackground()</code>{" "}
-            里组批：一行写成日期、编号、次数、电阻
-            X/Y、电流 X/Y，最后一列是设备号 1～4。查重改走{" "}
-            <code>isProductNumberExists06shebeihao01～04</code>
-            ，同一编号在不同工位可以并存，同一工位重复编号则提示“继电器编号已存在”。保存前还按工位{" "}
-            <code>updateAllcountValues(..., shebeihao)</code>
-            。四工位同时保存时，事务必须在后台跑，否则 EDT 会被 JDBC 堵住。
-          </ExtBox>
         </Sub>
         <Sub title="3）批处理怎么保证要么全成功要么全失败">
           <p>
@@ -313,15 +231,6 @@ int rowsInserted = ExecuteCommon.saveTestResultsBatch(dataToInsert);`}</CodeBloc
             <code>loadingHistory</code>{" "}
             标志很重要：刷新下拉框或回填编号时会再触发 ActionListener，有了这个标志就不会递归加载、把曲线清掉。
           </p>
-          <ExtBox
-            title="F13 拓展：编号与曲线按设备号隔离"
-            tech="四套 testBianHao / XYSeries、按 Shebeihao 查重、避免串台回放"
-          >
-            四个页签各自持有编号框和曲线对象。历史批次靠行末设备号区分，回放或继续试验时只动本页签的{" "}
-            <code>series / rightSeries / timeSeconds</code>
-            。若查询不带设备号，设备 2 的点会画进设备 1
-            的图。本拓展快照把查重下沉到工位级方法，重点从“同一编号追加”转为“按台账隔离批次”。
-          </ExtBox>
         </Sub>
       </Section>
 
@@ -352,39 +261,31 @@ int rowsInserted = ExecuteCommon.saveTestResultsBatch(dataToInsert);`}</CodeBloc
                     id, dianzumax, testcount
                   </td>
                   <td className="px-3 py-2">
-                    电阻停机阈值、单次试验最大次数。基础版固定读
-                    id=1；拓展后按工位读{" "}
-                    <code>getDianzumaxValue1～4</code> /{" "}
-                    <code>getTestmaxValue1～4</code>。
+                    电阻停机阈值、单次试验最大次数。程序固定读 id=1。
                   </td>
                 </tr>
                 <tr className="border-t">
                   <td className="px-3 py-2 font-medium">allcount</td>
                   <td className="px-3 py-2">id, allcount</td>
                   <td className="px-3 py-2">
-                    设备累计动作次数。拓展后{" "}
-                    <code>getAllcountValue1(1～4)</code> /{" "}
-                    <code>updateAllcountValues(text, shebeihao)</code>{" "}
-                    分台维护。
+                    设备累计动作次数。保存成功后累加。
                   </td>
                 </tr>
                 <tr className="border-t">
                   <td className="px-3 py-2 font-medium">test_results</td>
                   <td className="px-3 py-2">
-                    test_time, test_bianhao, count_test, 电阻/电流 x/y，行末设备号
+                    test_time, test_bianhao, count_test, series1~4 的 x/y
                   </td>
                   <td className="px-3 py-2">
-                    一条记录 = 一个采样点。拓展后按编号+设备号拼回本工位曲线。
+                    一条记录 = 一个采样点。按编号把整条曲线拼回来。
                   </td>
                 </tr>
                 <tr className="border-t">
                   <td className="px-3 py-2 font-medium">policetime</td>
                   <td className="px-3 py-2">
-                    Cishu, Tingzhizhi, Tingtime, Shebeihao
+                    Cishu, Tingzhizhi, Tingtime
                   </td>
-                  <td className="px-3 py-2">
-                    故障停机台账。拓展后用设备号区分哪一台停机。
-                  </td>
+                  <td className="px-3 py-2">故障停机台账，供事后追溯。</td>
                 </tr>
               </tbody>
             </table>
@@ -415,14 +316,6 @@ int rowsInserted = ExecuteCommon.saveTestResultsBatch(dataToInsert);`}</CodeBloc
               },
             ]}
           />
-          <ExtBox
-            title="F14 拓展：四套参数与累计次数"
-            tech="getDianzumaxValue1～4、getTestmaxValue1～4、getAllcountValue1(shebeihao)"
-          >
-            启动和点“开始检测”时，四个页签分别加载本工位电阻上限、次数上限和累计次数。界面顶部也会分别显示四套当前最大值。这批源码里的{" "}
-            <code>ExecuteCommon.java</code>{" "}
-            仍是单记录接口；四工位面板已经按分设备方法调用，说明数据访问层需要同步扩展，否则四套阈值会读成同一行。
-          </ExtBox>
         </Sub>
         <Callout title="连接工具不统一" tone="warn">
           阈值查询走 <code>DBConnection.getConnection()</code>

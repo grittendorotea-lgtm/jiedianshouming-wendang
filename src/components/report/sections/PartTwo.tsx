@@ -1,4 +1,4 @@
-import { Callout, CodeBlock, ExtBox, Flow, KvTable, Section, Sub } from "../blocks";
+import { Callout, CodeBlock, Flow, KvTable, Section, Sub } from "../blocks";
 
 export function PartTwo() {
   return (
@@ -52,16 +52,6 @@ comPort.writeBytes(request, request.length);`}</CodeBlock>
           1、单位 mA/A。二者共用 COM3、9600、功能码 0x03 及同一 CRC
           算法，并由上位机在关闭 PLC 通道后依次访问。
         </Callout>
-        <ExtBox
-          title="F2 拓展：四路电流与四路电阻共线交错采集"
-          tech="定时轮询、异步 SerialPortDataListener、80ms 组帧等待、单位码 mA/A/kA"
-        >
-          电流表地址扩展为 01～04，与电阻 05～08 排在同一调度队列。查询线程每
-          100ms 只问一台表，监听线程 sleep 80ms
-          后再取整帧，时间窗很紧：问得太快会粘包，问得太慢四个工位看到的不是同一拍数据。工位
-          1 取 <code>getCurrentValue(1)</code>
-          ，其余工位取 2/3/4。界面仍先写入隐藏框再抄到显示框，保证电阻、电流几乎同时刷新。
-        </ExtBox>
       </Section>
 
       <Section
@@ -124,14 +114,6 @@ return new Result(value, value5);`}</CodeBlock>
             为 0，注释掉了，所以手动停止主要是停软件循环和关报警，设备运行位的处理以现场调试为准。
           </p>
         </Sub>
-        <ExtBox
-          title="F3 拓展：四台设备分线圈控制"
-          tech="COM4 独立总线、写寄存器 1～4 分控运行、写寄存器 5 公共报警、状态灯 Y/N/stop"
-        >
-          PLC 改挂 COM4，与仪表 COM5 彻底分开，避免“问表时发不出停机”。工位 1～4
-          分别写寄存器 1～4 启动或停止；故障时还要写公共报警寄存器
-          5，并点亮对应红灯。四套试验可能同时请求写口，停机时序必须交错延时，否则线圈指令会互相覆盖。这是多执行器同步控制中典型的难写部分。
-        </ExtBox>
       </Section>
 
       <Section
@@ -204,18 +186,6 @@ return new Result(value, value5);`}</CodeBlock>
           <code>updateChart()</code>{" "}
           完成加点。通信成功与曲线更新通过界面文本解耦。
         </Callout>
-        <ExtBox
-          title="F4 / F5 拓展：四套状态机并行，节拍只取缓存"
-          tech="四线程池、AtomicBoolean 沿闭锁、8 路输入一次读出、生产者-消费者"
-        >
-          <code>readAndProcessRegisters</code> 一次读 8
-          个输入字，为四个工位提供凸轮状态。每个工位有自己的{" "}
-          <code>processed2 / processed111000 / processed555111</code>{" "}
-          以及独立 Future。凸轮到位后不再{" "}
-          <code>startReading / stopReading</code>{" "}
-          抢串口，而是直接读统一缓存。四个 while
-          循环同时跑，又共享同一 PLC 对象，必须用同步方法和沿标志避免重入。这是整份拓展里状态空间最大、最容易写错的部分。
-        </ExtBox>
       </Section>
 
       <Section id="speed" kicker="第八节" title="动作速度测算">
@@ -245,14 +215,6 @@ suduTest.setText(String.valueOf(roundedFrequency111));`}</CodeBlock>
           X1 回到 0 时把 <code>processedjishi1</code>{" "}
           清掉，这样下一次再亮才会重新计时。这是标准的上升沿检测。
         </p>
-        <ExtBox
-          title="F6 拓展：四通道测速与滑动平均"
-          tech="四路独立 lastTime、可选 5 点移动平均、EDT 回写四个速度框"
-        >
-          拓展版为四台设备各保留一套计时变量（如 lastTime111111～444111）。源码中还保留了窗口长度为{" "}
-          <code>MOVING_AVG_WINDOW = 5</code>{" "}
-          的滑动平均方案，用于压低机械抖动造成的速度跳变。四路同时计时，必须保证通道标签不串，否则设备 2 的间隔会被算进设备 1。
-        </ExtBox>
       </Section>
     </>
   );

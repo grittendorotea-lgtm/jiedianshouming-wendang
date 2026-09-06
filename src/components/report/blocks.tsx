@@ -72,27 +72,6 @@ export function CodeBlock({
   );
 }
 
-export function ExtBox({
-  title = "四工位八表拓展",
-  tech,
-  children,
-}: {
-  title?: string;
-  tech: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-lg border border-amber-300/80 bg-amber-50/90 px-4 py-3">
-      <p className="mb-1 text-sm font-semibold text-amber-950">{title}</p>
-      <div className="text-sm leading-7 text-slate-700">{children}</div>
-      <p className="mt-2 text-xs leading-6 text-slate-600">
-        <span className="font-semibold text-slate-800">关键技术：</span>
-        {tech}
-      </p>
-    </div>
-  );
-}
-
 export function Callout({
   title,
   children,

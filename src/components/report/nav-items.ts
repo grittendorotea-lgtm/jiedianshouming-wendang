@@ -14,4 +14,5 @@ export const navItems = [
   { id: "protocol", label: "13. 通信协议设计" },
   { id: "classes", label: "14. 软件结构" },
   { id: "conclusion", label: "15. 总结与展望" },
+  { id: "four-to-one", label: "16. 4拖1方案拓展" },
 ] as const;

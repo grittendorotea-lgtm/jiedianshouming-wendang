@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { navItems } from "./nav-items";
+import { PartFive } from "./sections/PartFive";
 import { PartFour } from "./sections/PartFour";
 import { PartOne } from "./sections/PartOne";
 import { PartThree } from "./sections/PartThree";
@@ -89,7 +90,7 @@ export function ReportApp() {
         在线监测系统
       </h1>
       <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
-        功能实现分析，共十五节。点目录即可跳转。
+        前十五节为基础实现，第十六节为 4 拖 1 方案。点目录即可跳转。
       </p>
       <Link
         href="/print"
@@ -138,7 +139,7 @@ export function ReportApp() {
           />
           <aside className="relative flex h-full w-[min(20rem,86vw)] flex-col bg-sidebar shadow-2xl">
             <div className="flex items-center justify-between px-4 pt-4">
-              <p className="text-sm text-sidebar-foreground/80">十五节目录</p>
+              <p className="text-sm text-sidebar-foreground/80">十六节目录</p>
               <Button
                 variant="ghost"
                 size="icon"
@@ -180,9 +181,10 @@ export function ReportApp() {
               接点接触电阻在线监测系统功能实现分析
             </h1>
             <p className="mt-4 text-[16px] leading-8 text-slate-600">
-              依据基础版 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon，以及拓展版
-              SixMeterInstrumentReader 与 2026-08-11
-              四工位面板，将系统归纳为 15 项功能。每一节先写基础实现，再补四工位八表拓展与技术难点。
+              依据 ZzhejiPanel、DianZu00000、JiaoL、ExecuteCommon
+              源码，将系统归纳为 15 项功能，并按 15
+              节说明各模块的实现方法。第十六节单独写 4 拖 1
+              多工位方案，不拆进前面各节。
             </p>
           </header>
 
@@ -191,6 +193,7 @@ export function ReportApp() {
             <PartTwo />
             <PartThree />
             <PartFour />
+            <PartFive />
           </div>
 
           <div className="mx-auto mt-10 flex max-w-3xl items-center justify-between gap-3 lg:hidden">
@@ -219,10 +222,10 @@ export function ReportApp() {
           </div>
 
           <footer className="mt-16 max-w-3xl border-t border-border pt-6 text-sm text-slate-500">
-            分析范围：基础版四类源码，以及{" "}
+            前十五节分析范围：ZzhejiPanel.java、DianZu00000.java、JiaoL.java、ExecuteCommon.java。第十六节另据{" "}
             <code>SixMeterInstrumentReader.java</code>、
-            <code>ZzhejiPanel-20260811.java</code>。
-            PLC 读写类 RRuANDWone 未包含在这批文件中，其行为根据主界面调用还原。
+            <code>ZzhejiPanel-20260811.java</code>
+            。PLC 读写类 RRuANDWone 未包含在这批文件中，其行为根据主界面调用还原。
             完整可粘贴正文见仓库 <code>docs/课题报告-功能实现分析.md</code>
             ，或打开
             <Link href="/print" className="mx-1 text-primary underline-offset-4 hover:underline">

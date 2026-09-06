@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { PartFive } from "@/components/report/sections/PartFive";
 import { PartFour } from "@/components/report/sections/PartFour";
 import { PartOne } from "@/components/report/sections/PartOne";
 import { PartThree } from "@/components/report/sections/PartThree";
@@ -24,13 +25,14 @@ export default function PrintPage() {
         接点接触电阻在线监测系统功能实现分析
       </h1>
       <p className="mt-4 leading-8 text-slate-600">
-        对照基础版源码与四工位八表拓展版整理。浏览器打印即可导出 PDF。
+        前十五节对照基础版源码；第十六节单独写 4 拖 1 方案。浏览器打印即可导出 PDF。
       </p>
       <div className="mt-10 space-y-14">
         <PartOne />
         <PartTwo />
         <PartThree />
         <PartFour />
+        <PartFive />
       </div>
     </article>
   );
