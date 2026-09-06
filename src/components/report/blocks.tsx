@@ -173,6 +173,63 @@ export function Flow({ steps }: { steps: string[] }) {
   );
 }
 
+export function Algo({
+  no,
+  title,
+  inputs,
+  outputs,
+  source,
+  steps,
+  complexity,
+  correctness,
+}: {
+  no: string;
+  title: string;
+  inputs: string;
+  outputs: string;
+  source: string;
+  steps: string[];
+  complexity: string;
+  correctness: string;
+}) {
+  return (
+    <article className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-slate-900 px-4 py-2.5 text-[14.5px] font-semibold text-white">
+        算法 {no}　{title}
+      </header>
+      <div className="grid gap-px bg-slate-200 sm:grid-cols-2">
+        <p className="bg-white px-4 py-2.5 text-[13.5px] leading-7 text-slate-700">
+          <span className="font-semibold text-slate-900">输入　</span>
+          {inputs}
+        </p>
+        <p className="bg-white px-4 py-2.5 text-[13.5px] leading-7 text-slate-700">
+          <span className="font-semibold text-slate-900">输出　</span>
+          {outputs}
+        </p>
+        <p className="bg-slate-50 px-4 py-2.5 text-[13px] leading-6 text-slate-600 sm:col-span-2">
+          <span className="font-semibold text-slate-800">源码　</span>
+          {source}
+        </p>
+      </div>
+      <ol className="list-decimal space-y-1.5 px-8 py-3 text-[14.5px] leading-7 text-slate-700">
+        {steps.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+      <div className="space-y-1.5 border-t border-slate-100 px-4 py-3 text-[13.5px] leading-7 text-slate-700">
+        <p>
+          <span className="font-semibold text-slate-900">复杂度　</span>
+          {complexity}
+        </p>
+        <p>
+          <span className="font-semibold text-slate-900">正确性条件　</span>
+          {correctness}
+        </p>
+      </div>
+    </article>
+  );
+}
+
 export function KvTable({
   rows,
 }: {

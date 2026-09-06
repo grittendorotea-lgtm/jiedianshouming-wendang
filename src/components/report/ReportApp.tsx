@@ -12,6 +12,7 @@ import { navItems } from "./nav-items";
 import { PartFive } from "./sections/PartFive";
 import { PartFour } from "./sections/PartFour";
 import { PartOne } from "./sections/PartOne";
+import { PartSeven } from "./sections/PartSeven";
 import { PartSix } from "./sections/PartSix";
 import { PartThree } from "./sections/PartThree";
 import { PartTwo } from "./sections/PartTwo";
@@ -102,7 +103,7 @@ export function ReportApp() {
         寿命测试软件
       </h1>
       <p className="mt-3 text-xs leading-6 text-sidebar-foreground/70">
-        前十五节为基础实现，第十六节为 4 拖 1，第十七节按矛盾—实现—边界归纳重难点。点目录即可跳转。
+        第十六节为 4 拖 1，第十七节为重难点，第十八节为模块框图与关键算法。点目录即可跳转。
       </p>
       <Link
         href="/print"
@@ -151,7 +152,7 @@ export function ReportApp() {
           />
           <aside className="relative flex h-full w-[min(20rem,86vw)] flex-col bg-sidebar shadow-2xl">
             <div className="flex items-center justify-between px-4 pt-4">
-              <p className="text-sm text-sidebar-foreground/80">十七节 · 重难点</p>
+              <p className="text-sm text-sidebar-foreground/80">十八节目录</p>
               <Button
                 variant="ghost"
                 size="icon"
@@ -196,8 +197,8 @@ export function ReportApp() {
               功能实现与关键技术分析
             </p>
             <p className="mt-4 text-[16px] leading-8 text-slate-600">
-              对照源码整理。前十五节写基础版功能实现与关键技术，第十六节单独写
-              4 拖 1 多工位方案，第十七节归纳重难点。各功能节末尾按矛盾—实现—边界作技术分析。
+              对照源码整理。前十五节为基础实现，第十六节为 4 拖
+              1，第十七节为重难点，第十八节给出模块框图与源码中的关键算法。
             </p>
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-4">
               <p className="text-sm font-semibold text-amber-950">摘要</p>
@@ -208,7 +209,7 @@ export function ReportApp() {
                 4 拖 1 方案将控制与测量分到 COM4、COM5，由统一读取器轮询八台仪表。
               </p>
               <p className="mt-2 text-[13px] text-slate-600">
-                关键词：继电器接点寿命；状态驱动采集；Modbus-RTU；安全联锁；4拖1
+                关键词：继电器接点寿命；状态驱动采集；Modbus-RTU；CRC-16；增量持久化；4拖1
               </p>
             </div>
           </header>
@@ -220,6 +221,7 @@ export function ReportApp() {
             <PartFour />
             <PartFive />
             <PartSix />
+            <PartSeven />
           </div>
 
           <div className="mx-auto mt-10 flex max-w-3xl items-center justify-between gap-3 lg:hidden">
@@ -248,7 +250,7 @@ export function ReportApp() {
           </div>
 
           <footer className="mt-16 max-w-3xl border-t border-border pt-6 text-sm text-slate-500">
-            前十五节分析范围：ZzhejiPanel.java、DianZu00000.java、JiaoL.java、ExecuteCommon.java。第十六、十七节另据{" "}
+            前十五节分析范围：ZzhejiPanel.java、DianZu00000.java、JiaoL.java、ExecuteCommon.java。第十六至十八节另据{" "}
             <code>SixMeterInstrumentReader.java</code>、
             <code>ZzhejiPanel-20260811.java</code>
             。PLC 读写类 RRuANDWone 未包含在这批文件中，其行为根据主界面调用还原。
