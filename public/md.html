@@ -12,37 +12,40 @@
       --muted: #5b6475;
       --line: #e4dccf;
       --card: #fffdf8;
-      --accent: #9a4b12;
+      --navy: #1e2a4a;
     }
     * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
     body {
       font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif;
       line-height: 1.75;
       font-size: 16.5px;
-      padding: 0 0 5rem;
+      padding: 0 0 5.5rem;
     }
     .bar {
-      position: sticky; top: 0; z-index: 20;
-      display: flex; gap: .5rem; flex-wrap: wrap;
+      position: sticky; top: 0; z-index: 40;
+      display: flex; gap: .5rem; flex-wrap: wrap; align-items: center;
       padding: .7rem .9rem;
-      background: #1e2a4a;
+      background: var(--navy);
       color: #fff;
     }
-    .bar a {
-      color: #fff; text-decoration: none;
+    .bar button, .bar a {
+      color: #fff; text-decoration: none; border: 0; cursor: pointer;
       background: #3a4a73; border-radius: 999px;
-      padding: .35rem .75rem; font-size: 13px;
+      padding: .4rem .8rem; font-size: 14px;
+      font-family: inherit;
     }
-    .bar a.primary { background: #c47a2b; }
+    .bar .primary { background: #c47a2b; }
+    .bar .menu-btn { background: #c47a2b; font-weight: 650; }
     article {
       max-width: 42rem; margin: 0 auto;
       padding: 1.1rem 1rem 2rem;
     }
     h1 { font-size: 1.55rem; line-height: 1.35; margin: 1.1rem 0 .6rem; }
+    h2, h3, h4 { scroll-margin-top: 4.2rem; }
     h2 { font-size: 1.25rem; margin: 1.6rem 0 .7rem; padding-top: .4rem; border-top: 1px solid var(--line); }
     h3, h4 { font-size: 1.05rem; margin: 1.2rem 0 .5rem; }
-    p, li { color: var(--ink); }
     blockquote {
       margin: .8rem 0; padding: .2rem .8rem;
       border-left: 3px solid #c47a2b; color: var(--muted);
@@ -57,57 +60,138 @@
       padding: .8rem; border-radius: 8px; font-size: 13px;
     }
     pre code { background: none; color: inherit; padding: 0; }
-    table {
-      border-collapse: collapse; width: 100%;
-      font-size: 13.5px; background: var(--card);
-    }
-    th, td {
-      border: 1px solid var(--line); padding: .4rem .5rem; vertical-align: top;
-    }
+    table { border-collapse: collapse; width: 100%; font-size: 13.5px; background: var(--card); }
+    th, td { border: 1px solid var(--line); padding: .4rem .5rem; vertical-align: top; }
     th { background: #f3eee4; text-align: left; }
     .table-wrap { overflow-x: auto; margin: .8rem 0 1rem; }
     img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
-    strong { font-weight: 650; }
-    .foot {
-      margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line);
-      color: var(--muted); font-size: 13px;
+    .foot { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .mask {
+      display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, .45); z-index: 50;
+    }
+    .mask.open { display: block; }
+    .drawer {
+      position: fixed; top: 0; bottom: 0; left: 0; z-index: 60;
+      width: min(20rem, 86vw);
+      background: var(--navy); color: #f7f4ee;
+      transform: translateX(-105%);
+      transition: transform .2s ease;
+      display: flex; flex-direction: column;
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer h2 {
+      margin: 0; padding: 1rem 1rem .4rem;
+      font-size: 1rem; border: 0; color: #fff;
+    }
+    .drawer p { margin: 0 1rem .8rem; color: #c9d0df; font-size: 12.5px; line-height: 1.55; }
+    .toc {
+      overflow: auto; padding: .2rem .7rem 1.4rem;
+      -webkit-overflow-scrolling: touch;
+    }
+    .toc ul { list-style: none; margin: 0; padding: 0; }
+    .toc > ul > li { margin: .15rem 0; }
+    .toc > ul > li > ul { margin: .15rem 0 .35rem .7rem; }
+    .toc a {
+      display: block; color: #e8edf6; text-decoration: none;
+      padding: .55rem .65rem; border-radius: 8px; font-size: 14.5px; line-height: 1.45;
+    }
+    .toc a:active, .toc a:focus { background: #3a4a73; }
+    .toc li li a { font-size: 13.5px; color: #c9d0df; padding: .4rem .65rem; }
+    .fab {
+      position: fixed; right: 1rem; bottom: 1.1rem; z-index: 35;
+      border: 0; border-radius: 999px; background: #c47a2b; color: #fff;
+      padding: .8rem 1.15rem; font-size: 15px; font-weight: 650;
+      box-shadow: 0 8px 20px rgba(0,0,0,.18);
+      font-family: inherit;
     }
   </style>
 </head>
 <body>
   <nav class="bar">
-    <a class="primary" href="/word">下载 Word</a>
-    <a href="/">完整网页版</a>
-    <a href="/print">打印稿</a>
+    <button type="button" class="menu-btn" id="openMenu">目录</button>
+    <a class="primary" id="wordBtn" href="/word">下载 Word</a>
   </nav>
+  <div class="mask" id="mask"></div>
+  <aside class="drawer" id="drawer">
+    <h2>课题报告目录</h2>
+    <p>点一项即跳到对应章节。</p>
+    <div class="toc"><div class="toc">
+<ul>
+<li><a href="#_3">摘要</a></li>
+<li><a href="#1">1 系统概述</a></li>
+<li><a href="#2">2 总体架构</a></li>
+<li><a href="#3">3 系统总体功能</a></li>
+<li><a href="#4">4 接触电阻采集</a></li>
+<li><a href="#5">5 电流采集</a></li>
+<li><a href="#6-plc">6 PLC通信与控制</a></li>
+<li><a href="#7">7 试验流程控制</a></li>
+<li><a href="#8">8 动作速度测算</a></li>
+<li><a href="#9">9 保护停机机制</a></li>
+<li><a href="#10">10 实时曲线监测</a></li>
+<li><a href="#11">11 数据存储与回放</a></li>
+<li><a href="#12">12 数据库设计</a></li>
+<li><a href="#13">13 通信协议设计</a></li>
+<li><a href="#14">14 软件结构</a></li>
+<li><a href="#15">15 关键技术与总结</a></li>
+<li><a href="#16-41">16 4拖1方案的多工位拓展</a><ul>
+<li><a href="#_4">方案含义</a></li>
+<li><a href="#_5">工位对应关系</a></li>
+<li><a href="#_6">统一仪表调度</a></li>
+<li><a href="#plc">PLC 与并行试验</a></li>
+<li><a href="#_7">保护、曲线与台账</a></li>
+<li><a href="#_8">还可继续扩展</a></li>
+</ul>
+</li>
+<li><a href="#17">17 重难点问题与代码解答</a><ul>
+<li><a href="#1_1">1）核心题：两路半双工总线如何拖四套独立状态机</a></li>
+<li><a href="#2_1">2）基础版：单总线时分、异构采集与增量持久化</a></li>
+<li><a href="#341">3）4拖1：总线调度、共享对象与故障隔离</a></li>
+</ul>
+</li>
+<li><a href="#18">18 模块框图与关键算法分析</a><ul>
+<li><a href="#181">18.1 软件系统总体设计</a></li>
+<li><a href="#182">18.2 软件功能模块设计</a></li>
+<li><a href="#183">18.3 关键算法设计</a></li>
+<li><a href="#184">18.4 核心测试控制流程</a></li>
+<li><a href="#185">18.5 模块输入—处理—输出关系</a></li>
+<li><a href="#186">18.6 可直接用于论文的系统设计表述</a></li>
+<li><a href="#187">18.7 附录：源码对照与算法命名</a></li>
+<li><a href="#188-4-1">18.8 4 拖 1 拓展版源码中的补充算法</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+  </aside>
+  <button type="button" class="fab" id="fab">目录</button>
   <article>
-    <h1>继电器接点寿命测试软件</h1>
-<h1>功能实现与关键技术分析</h1>
+    <h1 id="_1">继电器接点寿命测试软件</h1>
+<h1 id="_2">功能实现与关键技术分析</h1>
 <p>课题报告整理稿。整理日期：2026年7月。</p>
 <p>依据源码：<code>ZzhejiPanel.java</code>、<code>DianZu00000.java</code>、<code>JiaoL.java</code>、<code>ExecuteCommon.java</code>。第 16～17 节另据 <code>SixMeterInstrumentReader.java</code>、<code>ZzhejiPanel-20260811.java</code>。第 18 节按论文「软件系统设计 / 测控系统设计」稿给出七层模块框图、公式 (1)–(13) 与关键算法；4 拖 1 补充算法单列 18.8。</p>
-<h2>摘要</h2>
+<h2 id="_3">摘要</h2>
 <p>该软件是一套电气接点寿命试验的自动测试与实时监测系统。系统以 PLC/IO 状态识别机械动作阶段，分时读取三路接触电阻和一路电流，完成实时显示、趋势分析、联锁停机、故障记录和历史追溯，形成“控制—采集—分析—报警—存储—追溯”闭环。后续 4 拖 1 方案将控制与测量分到 COM4、COM5。各功能节用问—答写难点；第 17 节集中归纳，核心题是“两串口如何拖四组独立启停的设备”。</p>
 <p>关键词：继电器接点寿命；状态驱动采集；Modbus-RTU；安全联锁；4拖1</p>
-<h2>1 系统概述</h2>
+<h2 id="1">1 系统概述</h2>
 <p>该软件是一套电气接点寿命试验的自动测试与实时监测系统。系统通过 PLC/IO 状态判断机械机构的动作阶段，在不同状态下分时读取三路接触电阻和一路电流，并将采集结果用于实时显示、趋势分析、异常判断、联锁停机、故障记录及历史追溯。</p>
 <p>功能闭环为“设备控制—状态识别—参数采集—实时可视化—异常保护—数据存储—历史数据恢复”。<code>ZzhejiPanel</code> 承担主界面与业务控制，<code>DianZu00000</code> 负责三路电阻，<code>JiaoL</code> 负责电流，并依赖 <code>RRuANDWone</code>、<code>ExecuteCommon</code>、<code>JdbcDeal</code>。</p>
 <p>核心目标：自动控制启停；按 PLC 状态在合适阶段测量；实时采集三路电阻与一路电流；显示并绘制趋势；超限/超时/到次数时停机报警；数据与故障入库以支持续测和追溯。</p>
 <p><strong>问：这套软件最难的地方是画寿命曲线，还是把采集和控制对齐？</strong><br />
 答：曲线只是结果。真正难的是用 PLC 两个输入字识别机械阶段，在对应到位瞬间分时读三路电阻和一路电流，再立刻拿去比阈值、决定停机。基础版挤在一把 COM3 上完成这件事；4 拖 1 则要在两把口上让四组设备各自启停。第 17 节把这类题集中答了一遍。</p>
-<h2>2 总体架构</h2>
+<h2 id="2">2 总体架构</h2>
 <p>系统划分为人机交互层、业务控制层、硬件通信层和数据持久层。主界面展示状态并接收操作；业务层决定何时读设备、何时采集、何时报警；通信层通过串口和 Modbus 与 PLC、电阻模块、电流模块通信；数据层保存试验结果、累计次数和故障信息。</p>
 <p>因多设备共享 COM3，通信采用时分复用。异常路径若未及时释放端口，下一模块可能无法通信。后续可设计统一 SerialPortManager。</p>
 <blockquote>
-<p>结构图见网页阅读版对应章节。</p>
+<p>结构图见对应章节正文。</p>
 </blockquote>
 <p>图2-1 系统四层结构</p>
 <blockquote>
-<p>结构图见网页阅读版对应章节。</p>
+<p>结构图见对应章节正文。</p>
 </blockquote>
 <p>图2-2 单串口时分复用流程</p>
 <p><strong>问：为什么不给 PLC、电阻仪、电流表各开一个串口，而要挤在 COM3 上？</strong><br />
 答：基础版现场就是一把 RS-485。三个 Java 对象都写死 <code>getCommPort("COM3")</code>，Windows 下不能同时打开。代码用“先 close 再 open”做时分复用：平时 PLC 占口读 X1/X2，到位后再把口交给仪表，读完立刻归还。异常路径若没关口，下一模块会打不开。</p>
-<h2>3 系统总体功能</h2>
+<h2 id="3">3 系统总体功能</h2>
 <table>
 <thead>
 <tr>
@@ -171,28 +255,28 @@
 </table>
 <p><strong>问：十个模块里，答辩时该抓住哪几条？</strong><br />
 答：三条主线：状态驱动自动测试、多源参数对齐监测、安全联锁与数据追溯。第 4～14 节和第 16 节末尾都有问—答；第 17 节把“两串口拖四组独立设备”等题再归纳一遍。</p>
-<h2>4 接触电阻采集</h2>
+<h2 id="4">4 接触电阻采集</h2>
 <p><code>DianZu00000</code> 同步轮询从站 2、3、4。打开 COM3 失败时每 50ms 重试，以便抢到 PLC 刚释放的口。对每个从站发送功能码 03H、起始寄存器 1、数量 3 的请求，等待约 50ms 后收应答。应答经 CRC-16 校验后，按原始值、小数位和单位码还原：实际值 = 原始值 / 10^小数位。单位码 3、4、5 分别对应 mΩ、Ω、kΩ。三路单位实际共用同一字段。</p>
 <p><strong>问：三块电阻表共线，怎样保证问 2 的时候不会把 3、4 的应答写进电阻 1？</strong><br />
 答：<code>readAndStoreValues()</code> 按地址 2、3、4 串行发 03H 帧，每问一路等约 50ms 再收。解析后用 <code>switch (address)</code> 写入 <code>dianZValue1/2/3</code>。CRC 失败返回 0。半双工上必须排队，不能三路并发。</p>
 <p><strong>问：原始整数怎样变成 12.34 mΩ，又怎样拿去和阈值比较？</strong><br />
 答：<code>rawValue = (data[3]&lt;&lt;8)|data[4]</code>，再除以 <code>10^data[6]</code>，<code>data[8]</code> 决定 mΩ/Ω/kΩ。界面显示带单位字符串，主界面 <code>extractNumber()</code> 抠出 <code>pureValue</code> 再和 <code>dianzumax</code> 比。</p>
-<h2>5 电流采集</h2>
+<h2 id="5">5 电流采集</h2>
 <p><code>JiaoL</code> 访问从站 1，组帧方式与电阻相同，收数采用串口监听。单位码 3、4 分别对应 mA、A。主界面调用顺序为：打开并请求 → 睡眠 200ms → 读取缓存字符串 → 关闭串口。电流数字由 <code>"1.85 A"</code> 按空格拆出第一段得到。</p>
 <p><strong>问：电流用监听、电阻用轮询，怎样保证问完一次就能关口、还不卡界面？</strong><br />
 答：<code>JiaoL.startReading()</code> 打开 COM3 后只发一帧，靠 <code>SerialPortDataListener</code> 收应答，监听里 sleep 100ms 等整帧。主界面再睡 200ms，取 <code>getJiaoLZValueWithUnit()</code>，立刻 <code>stopReading()</code>。单位码不是 3/4 则返回 0。</p>
 <p><strong>问：电阻同步、电流异步，怎样对齐成同一个采样点？</strong><br />
 答：电流先写入隐藏框 <code>dianzu444NO</code>，电阻读完再抄到显示框。四个显示框共用 DocumentListener，三阻一电都非空才在同一 <code>timeSeconds</code> 上加点。</p>
-<h2>6 PLC通信与控制</h2>
+<h2 id="6-plc">6 PLC通信与控制</h2>
 <p>PLC 地址为 0x08。上位机循环读取功能码 04H、起始 0、数量 2 的输入寄存器，直到应答功能码确认为 04H。第一字 X1 为右侧凸轮，有效时采集电阻；第二字 X2 为左侧凸轮，有效时采集电流。写寄存器 1 控制运行（0 启动，1 停机），写寄存器 2 控制报警。</p>
 <p><strong>问：PLC 只给出两个输入字，怎样同时驱动采集、速度和机械超时？</strong><br />
 答：X1 上升沿读三路电阻并刷新速度；X2 上升沿读电流。任一凸轮长时间为 0 就判超时。开始测试写寄存器 1 为 0；故障写寄存器 1、2 为 1。这是状态驱动，不是按固定周期扫全部传感器。</p>
 <p><strong>问：点“停止测试”为什么主要写报警位，运行位却被注释掉？</strong><br />
 答：else 分支 <code>cancel</code> 后台循环，写寄存器 2 为 0 消报警。寄存器 1 写 0 的语句被注释，手动停侧重停软件循环和关报警。保护停机路径才会明确把运行位写成 1。</p>
-<h2>7 试验流程控制</h2>
+<h2 id="7">7 试验流程控制</h2>
 <p>外层循环控制试验是否继续，内层循环等待本拍电阻采集完成。设计目的是先电阻、后电流，避免在电流信号保持有效时重复读表。X1 上升沿触发三路电阻采集，X2 上升沿触发电流采集，<code>AtomicBoolean</code> 用于上升沿闭锁。采集线程只刷新文本框；四个显示框共用 DocumentListener，四路均非空时才加点，次数加 2。</p>
 <blockquote>
-<p>结构图见网页阅读版对应章节。</p>
+<p>结构图见对应章节正文。</p>
 </blockquote>
 <p>图7-1 试验主循环</p>
 <p>操作员进入界面后，系统自动加载电阻停机阈值、累计动作次数和历史试验编号。输入或选择编号后启动测试，上位机向 PLC 发出运行指令。右侧行程开关有效则读三路电阻，左侧有效则读电流。四路数据齐备后曲线加点并计算速度。出现保护条件则停机入库。试验结束后按编号保存；旧编号只追加新点。退出时复位沿标志、计时器和串口。</p>
@@ -200,39 +284,39 @@
 答：源码注释要求先电阻、后电流，避免电流信号保持有效时反复问表。内层等到本拍电阻采完才退出；外层立刻做电阻超限、电流超限、次数上限三道门禁。同一凸轮持续为 1 时，靠 <code>processed2</code>、<code>processed555111</code> 闭锁。</p>
 <p><strong>问：串口等待会不会把界面卡死？采集线程为什么不直接往图上加点？</strong><br />
 答：正式循环丢进 <code>ExecutorService</code>，停止用 <code>Future.cancel(true)</code>。界面刷新一律 <code>SwingUtilities.invokeLater</code>。采集线程只改文本框，由监听器在 EDT 上 <code>updateChart()</code>。</p>
-<h2>8 动作速度测算</h2>
+<h2 id="8">8 动作速度测算</h2>
 <p>记录相邻两次 X1 有效时刻的间隔 Δt。当 Δt 大于 2 秒时，按 v = 120 / Δt 计算每分钟动作次数。系数 120 相当于 60×2，与曲线横坐标每次步进 2 一致。</p>
 <p><strong>问：速度为什么写成 120/Δt，开关抖动时会不会把次数刷飞？</strong><br />
 答：代码明确是 <code>v = 120.0 / timeDifference</code>。两次 X1 间隔 2 秒就显示 60 次/分钟。系数 120 的机械含义要结合机构确认，报告里不擅自解释。只有 Δt &gt; 2 秒才认作有效间隔；X1 回到 0 才清 <code>processedjishi1</code>。</p>
-<h2>9 保护停机机制</h2>
+<h2 id="9">9 保护停机机制</h2>
 <p>电阻上限取自 <code>d_dianzumax.dianzumax</code>，任一路超限则停机报警。电流超过 2.1A 同样停机。凸轮信号持续无效超过 12 秒判定机构故障。次数达到 <code>testcount</code> 后结束试验。故障写入 <code>policetime</code>（次数、类型、时间）。</p>
 <blockquote>
-<p>结构图见网页阅读版对应章节。</p>
+<p>结构图见对应章节正文。</p>
 </blockquote>
 <p>图9-1 四类保护停机判定</p>
 <p><strong>问：刚进界面、计时器还没初始化时，会不会立刻误报凸轮超时？</strong><br />
 答：超时窗口写成 (12, 10000) 秒：正常节拍远小于 12 秒才会卡死报警，上限 10000 躲开计时器未赋值时的巨大时间差。</p>
 <p><strong>问：四类保护触发后，怎样保证设备真停、还能追溯？</strong><br />
 答：外循环实时比较，立刻写寄存器 1、2 停机报警，结束外循环，再 <code>saveToPolicetimeTable</code> 记次数、原文和时间。这不是测完再判合格，而是每拍闭环。</p>
-<h2>10 实时曲线监测</h2>
+<h2 id="10">10 实时曲线监测</h2>
 <p>左侧纵坐标为电阻，右侧纵坐标为电流，横坐标为动作次数。可视窗口约 28 次。支持最近点读数、滚轮缩放、滚动浏览及分系列显隐。</p>
 <p><strong>问：电阻是 mΩ、电流是 A，怎样画在一张图上还不提前画出半拍数据？</strong><br />
 答：左轴挂三路电阻，右轴挂电流。采集线程不直接 <code>series.add</code>，只改四个文本框；DocumentListener 等到三阻一电都非空，才在同一 <code>timeSeconds</code> 加点，然后横坐标 +2。变量名叫 timeSeconds，实际是次数。</p>
-<h2>11 数据存储与回放</h2>
+<h2 id="11">11 数据存储与回放</h2>
 <p>每个采样点对应 <code>test_results</code> 中一行。保存采用 JDBC 批处理事务。新编号全量写入，已回显的旧编号仅追加新点。保存成功后累计次数按新增点数的 2 倍增加。选择已有编号可按横坐标升序回放，并自最大次数继续试验。</p>
 <blockquote>
-<p>结构图见网页阅读版对应章节。</p>
+<p>结构图见对应章节正文。</p>
 </blockquote>
 <p>图11-1 试验数据保存与回放</p>
 <p><strong>问：同一试品分段试验，怎样避免把已经回显的旧点再插一遍？</strong><br />
 答：回显时记下 <code>loadedPointCount</code> 和 <code>loadedTestBianHao</code>。保存时只有“编号已存在且等于当前回显编号”才从该索引追加；否则从第 0 点全量写。批插关自动提交，失败 rollback。</p>
 <p><strong>问：操作员误选新编号，会不会把正在画的曲线清空？</strong><br />
 答：库里没有的编号直接返回，绝不清空当前曲线。回填下拉框时先置 <code>loadingHistory</code>，避免 ActionListener 递归加载。</p>
-<h2>12 数据库设计</h2>
+<h2 id="12">12 数据库设计</h2>
 <p><code>d_dianzumax</code> 保存电阻阈值与最大次数；<code>allcount</code> 保存累计次数；<code>test_results</code> 保存曲线点；<code>policetime</code> 保存故障记录。阈值查询与曲线批插分别使用 <code>DBConnection</code> 和 <code>JdbcDeal</code>。</p>
 <p><strong>问：阈值、曲线、故障分别怎么落库，两套连接会不会把一次保存写丢一半？</strong><br />
 答：阈值和累计次数走 <code>DBConnection</code>；曲线批插和故障台账走 <code>JdbcDeal</code>。曲线写入关自动提交，成功才 commit。功能上能跑通，两套入口是后续该收成一个连接池的点。</p>
-<h2>13 通信协议设计</h2>
+<h2 id="13">13 通信协议设计</h2>
 <p>通信采用 Modbus-RTU。请求帧为地址、功能码、起始地址、数量及 CRC（低字节在前）。电阻/电流使用功能码 03H，PLC 使用功能码 04H。CRC-16 初值 0xFFFF，多项式反射形式 0xA001。</p>
 <p>系统在 RS-485 总线上采用主从问答。因多设备共享同一串口，上位机在开关量有效时关闭 PLC 通道，再访问从站 2、3、4 和从站 1，完成后交还 PLC。校验失败的数据不进入曲线。</p>
 <table>
@@ -289,12 +373,12 @@
 答：请求和应答都算 Modbus CRC-16（初值 0xFFFF，多项式 0xA001）。长度不够或校验失败直接丢弃。PLC 应答功能码不是 04H 就延时 10ms 重问。</p>
 <p><strong>问：一拍里 PLC、三块电阻表、电流表怎样排队？</strong><br />
 答：平时 PLC 用 08 04 读两路输入。X1 到位后关口，再按地址 2、3、4 各发一帧 03H；交还后再盯 X2，到位后发 01 03 读电流。半双工上必须排队。</p>
-<h2>14 软件结构</h2>
+<h2 id="14">14 软件结构</h2>
 <p><code>ZzhejiPanel</code> 负责人机交互与试验状态机；<code>DianZu00000</code>、<code>JiaoL</code> 分别完成电阻与电流采集；<code>ExecuteCommon</code> 完成数据访问。界面更新位于 EDT，采集任务运行于 3 线程池，电流监听位于串口回调线程。串口互斥依赖关闭后再打开的调用顺序。</p>
 <p>主要界面控件：编号框 <code>testBianHao</code>，日期 <code>testTime</code>，次数 <code>countTest</code>，累计次数 <code>allcountTest</code>，速度 <code>suduTest</code>，电阻 <code>dianzu111/222/333</code>，电流显示 <code>dianzu444</code>，电流隐藏缓存 <code>dianzu444NO</code>。</p>
 <p><strong>问：退出后再进试验页，会不会沿用上次的线程、沿标志或串口占用？</strong><br />
 答：“退出”先走 <code>resetForNextEnter()</code>：停 Timer、取消 Future、移除文本监听、关串口、复位 AtomicBoolean 和时间变量，再回 Home。否则下一次会误判凸轮超时，或打不开 COM3。</p>
-<h2>15 关键技术与总结</h2>
+<h2 id="15">15 关键技术与总结</h2>
 <p>核心技术：状态驱动式测试；多源数据协同采集；后台线程与界面分离；实时质量判定与联锁保护；数据追溯与试验恢复。</p>
 <p>答辩应突出三条主线：状态驱动自动测试；多源参数实时监测；安全联锁与数据追溯。不宜把主要篇幅放在按钮颜色和绝对坐标上。</p>
 <p>总结表述：本系统以 PLC 机械状态为测试时序依据，通过串口与 Modbus RTU 协调三路接触电阻、电流及设备控制，在后台线程中完成自动循环测试；同时利用 Swing 和 JFreeChart 实时显示参数及趋势，并结合数据库实现测试数据、累计寿命与异常信息的持久化。出现电阻超限、电流超限、机构超时或达到设定次数时自动停机并记录故障，形成“控制—采集—分析—报警—存储—追溯”闭环。</p>
@@ -302,15 +386,15 @@
 <p>不足：COM3 缺少统一调度器；两套数据库连接；三路电阻单位共用字段；电流阈值 2.1A 硬编码；固定分辨率绝对布局。</p>
 <p><strong>问：基础版和 4 拖 1 各自最难的一句，答辩时怎么收口？</strong><br />
 答：基础版是一把 COM3 上用凸轮状态把电阻和电流对齐。4 拖 1 是两把口上把问表和用数拆开，让四套状态机独立启停。第 17 节按问—答把调度、沿闭锁、增量存盘和分设备台账集中写了。</p>
-<h2>16 4拖1方案的多工位拓展</h2>
+<h2 id="16-41">16 4拖1方案的多工位拓展</h2>
 <p>前十五节只分析单工位基础版。本节说明后来做成的 4 拖 1 方案：一台上位机、一块 PLC、一条仪表总线，同时拖四台监测设备。</p>
-<h3>方案含义</h3>
+<h3 id="_4">方案含义</h3>
 <p>界面用 <code>JTabbedPane</code> 做成“监测设备1～4”。每台各有启停、状态灯、编号、次数、速度、电阻/电流和一张双轴曲线。接线收成两路：COM4 只连 PLC，COM5 只连八台仪表。一台超限停机，不影响邻站。</p>
 <blockquote>
-<p>结构图见网页阅读版对应章节。</p>
+<p>结构图见对应章节正文。</p>
 </blockquote>
 <p>图16-1 4拖1双总线结构</p>
-<h3>工位对应关系</h3>
+<h3 id="_5">工位对应关系</h3>
 <table>
 <thead>
 <tr>
@@ -353,17 +437,17 @@
 </tbody>
 </table>
 <p>报警共用寄存器 5。状态灯为 stop / Y / N。</p>
-<h3>统一仪表调度</h3>
+<h3 id="_6">统一仪表调度</h3>
 <p><code>SixMeterInstrumentReader</code> 每 100ms 问一台表，地址 01→08 循环，一整轮约 800ms。监听线程 sleep 80ms 后取整帧，CRC 通过后按 <code>data[0]</code> 分流写入 <code>ConcurrentHashMap</code>。四个试验循环只读缓存，不再开关仪表口。</p>
 <blockquote>
-<p>结构图见网页阅读版对应章节。</p>
+<p>结构图见对应章节正文。</p>
 </blockquote>
 <p>图16-2 八表轮询与四工位用数</p>
-<h3>PLC 与并行试验</h3>
+<h3 id="plc">PLC 与并行试验</h3>
 <p>PLC 改挂 COM4，地址 0x01，一次读 8 个输入字：<code>01 04 00 00 00 08 F1 CC</code>。四个循环共享 <code>synchronized readAndProcessRegisters()</code>。写寄存器 1～4 分控运行，写寄存器 5 公共报警。</p>
-<h3>保护、曲线与台账</h3>
+<h3 id="_7">保护、曲线与台账</h3>
 <p>电阻阈值 <code>getDianzumaxValue1～4</code>，电流仍与 2.1 A 比较，凸轮 12 s 超时，次数 <code>getTestmaxValue1～4</code>。四张独立双轴图。保存用 <code>SwingWorker</code> + <code>LoadingGifDialog</code>，行末写设备号。<code>policetime</code> 增加 <code>Shebeihao</code>。这批 <code>ExecuteCommon.java</code> 仍是单记录接口，需与分设备方法对齐。</p>
-<h3>还可继续扩展</h3>
+<h3 id="_8">还可继续扩展</h3>
 <p>调度器按地址取模循环，页签是同构副本，运行线圈按工位号顺延，台账按设备号筛选。源码中残留的 COM5 上 <code>RRu</code>/<code>Wone</code> 不能与读取器同时打开。4 拖 1 能成立，关键是把问表和用数拆开，并把四套状态彻底隔离。</p>
 <p><strong>问：工位数大于串口数时，如何让四套设备独立启停，并且问表期间仍能对故障工位写停机？</strong><br />
 矛盾：沿用基础版“到位就关 PLC、开仪表”，四工位并发会互相踢口；保护停机也会卡在读表占用上。<br />
@@ -377,9 +461,9 @@
 矛盾：共享读取器让“停一台”很容易变成“停总线”。<br />
 实现：只写寄存器 2 与 Future2，COM5 调度器不停，台账带 <code>Shebeihao=2</code>。<br />
 边界：工位 2 清寄存器 5 可能抹掉邻站报警。</p>
-<h2>17 重难点问题与代码解答</h2>
+<h2 id="17">17 重难点问题与代码解答</h2>
 <p>前面各节已经按功能写了实现。本节只收那些真正构成工程矛盾的问题。每道题按“矛盾—实现—边界”写：先说明朴素做法为什么失败，再对照源码写解法，最后点出仍未收干净的约束。</p>
-<h3>1）核心题：两路半双工总线如何拖四套独立状态机</h3>
+<h3 id="1_1">1）核心题：两路半双工总线如何拖四套独立状态机</h3>
 <p><strong>问：工位数大于物理串口数时，如何同时满足四套独立启停，并且在问表期间仍能对故障工位下发停机？</strong></p>
 <p>矛盾：RS-485 半双工，同一时刻一条总线只能有一对主从问答。若沿用基础版“凸轮到位就 close PLC 口、open 仪表口”，四个试验循环并发时会互相踢掉 <code>SerialPort</code> 对象，凸轮沿丢失、保护写线圈失败。现场又只有 COM4、COM5。更苛刻的是：电阻超限必须在读表过程中仍能写停机，控制和测量不能再抢同一把口。</p>
 <p>实现：拆成三条互不重叠的通道。<br />
@@ -388,10 +472,10 @@
 （3）控制面按工位切开：写寄存器 i∈{1,2,3,4} 控制本台运行（0 启动 / 1 停机），寄存器 5 公共报警；<code>isTestingStarted1～4</code>、四套线程池、四套 AtomicBoolean 和四张曲线彼此隔离，<code>cancel(true)</code> 只停本工位 Future。</p>
 <p>边界：缓存最大陈旧约 800ms，凸轮沿读到的是上一轮值——用时效换吞吐。四个循环共享 <code>synchronized readAndProcessRegisters()</code>，COM4 被串行化，一次读 8 字。报警线圈 5 仍是共享资源，100ms 交错写只能降低覆盖。残留 <code>RRu/Wone("COM5")</code> 一旦打开会拆掉调度器。仓库里的 <code>ExecuteCommon</code> 仍是单记录接口，分设备阈值若未对齐会读成同一行。</p>
 <blockquote>
-<p>结构图见网页阅读版对应章节。</p>
+<p>结构图见对应章节正文。</p>
 </blockquote>
 <p>图17-1 控制面与测量面解耦</p>
-<h3>2）基础版：单总线时分、异构采集与增量持久化</h3>
+<h3 id="2_1">2）基础版：单总线时分、异构采集与增量持久化</h3>
 <p><strong>问：PLC、三路电阻、一路电流共用 COM3 时，为什么不能定时全量轮询，时分复用的互斥条件是什么？</strong><br />
 矛盾：三个 Java 对象都写死 <code>getCommPort("COM3")</code>。Windows 下不能同时打开；半双工也不允许并发发两帧。定时全量轮询会在凸轮未到位时占口。<br />
 实现：状态驱动。平时 PLC 占口读 X1/X2；仅上升沿 close 后把口交给 <code>DianZu00000</code> 或 <code>JiaoL</code>，读完立刻归还。互斥在调用顺序上的“先关后开”，不在锁对象。<br />
@@ -416,7 +500,7 @@
 矛盾：损坏的 16 位整数一次就能误停机或留下尖峰。<br />
 实现：Modbus CRC-16（初值 0xFFFF，多项式 0xA001）。长度不足或校验失败丢弃。PLC 功能码不是 04H 则 10ms 重问。<br />
 边界：丢弃不等于重读成功。三路电阻单位共用 <code>dianZUnit1</code>，显示可能骗人，判定用纯数值。</p>
-<h3>3）4拖1：总线调度、共享对象与故障隔离</h3>
+<h3 id="341">3）4拖1：总线调度、共享对象与故障隔离</h3>
 <p><strong>问：八台仪表共一条 RS-485，如何保证应答不会写进邻站缓存？</strong><br />
 矛盾：并发八路 03H 会重叠；按发送序号入表，迟到应答会张冠李戴。<br />
 实现：每 100ms 只问一台。解析读 <code>data[0]</code>：01～04 电流，05～08 电阻。工位映射写死。CRC 失败不覆盖旧缓存。<br />
@@ -430,9 +514,9 @@
 实现：比较本工位 <code>getDianzumaxValue2()</code>，写寄存器 2 停本台、寄存器 5 报警，只 cancel Future2。COM5 不停。入库带 <code>Shebeihao</code>。<br />
 边界：寄存器 5 是公共报警，稍后写 0 可能清掉邻站报警。电流阈值四台仍共用 2.1 A。</p>
 <p>基础版的本质难点是：在一把 COM3 上用凸轮电平把异构采集编排成同一拍，并用沿闭锁和增量游标保证不重读、不重存。4 拖 1 的本质难点是：把问表从试验循环里拿出去，让控制面按线圈隔离、测量面按缓存共享。图多画三张不是难点，调度、互斥和隔离才是。</p>
-<h2>18 模块框图与关键算法分析</h2>
+<h2 id="18">18 模块框图与关键算法分析</h2>
 <p>本节对应论文「软件系统设计 / 测控系统设计」章节。软件平台为 Java 桌面端测控系统；核心对象是继电器或往复机构寿命试验中的接触电阻、工作电流与动作状态。文中「算法」属于实时测控、工业通信与故障诊断，不是机器学习。框图与流程图按基础版单工位源码绘制。4 拖 1 补充算法单列 18.8。</p>
-<h3>18.1 软件系统总体设计</h3>
+<h3 id="181">18.1 软件系统总体设计</h3>
 <p>该软件面向继电器或具有往复动作机构的寿命试验过程，采用「上位机界面—串口通信—PLC/IO 状态采集—电参数采集—实时判定—联锁控制—曲线显示—数据库追溯」的闭环结构。软件不仅完成测试数据的显示与保存，还承担动作状态识别、速度计算、接触电阻与电流越限判定、机构超时诊断以及异常停机控制等实时测控任务。</p>
 <p>系统划分为七个功能层：人机交互与参数管理、测试控制与并发调度、设备通信与协议、数据采集与信号解析、实时控制与故障诊断、实时曲线与交互可视化、数据持久化与历史回放。各层通过状态量、测量量和控制命令形成闭环数据流。</p>
 <p><img alt="图 18-1 软件总体模块框图" src="/figures/fig1-module-architecture.png" /></p>
@@ -508,7 +592,7 @@
 </tr>
 </tbody>
 </table>
-<h4>18.1.1 软件开发技术与运行机制</h4>
+<h4 id="1811">18.1.1 软件开发技术与运行机制</h4>
 <table>
 <thead>
 <tr>
@@ -575,7 +659,7 @@
 </tr>
 </tbody>
 </table>
-<h3>18.2 软件功能模块设计</h3>
+<h3 id="182">18.2 软件功能模块设计</h3>
 <p><strong>18.2.1 人机交互与参数管理。</strong> 管理测试编号、日期、监测次数、速度、累计次数、最大允许接触电阻，提供开始/停止/保存/退出。测试编号为可编辑下拉框，可输入新编号或选择历史编号。</p>
 <p><strong>18.2.2 测试控制与并发调度。</strong> ExecutorService 提交测试任务，Future 保存句柄以便停止或退出时取消。AtomicBoolean 标记某触发状态是否已处理，避免持续高电平重复采样。SwingUtilities.invokeLater 回写界面。退出时取消任务、关闭串口并重置状态。</p>
 <p><strong>18.2.3 设备通信与 Modbus RTU。</strong> jSerialComm 管理 COM3、9600 bit/s。0x04 读输入寄存器，0x06 写单个保持寄存器。请求帧发送前计算 CRC16，响应帧按功能码和数据区解析。</p>
@@ -583,45 +667,45 @@
 <p><strong>18.2.5 实时控制与故障诊断。</strong> 形成「检测—诊断—执行—记录」闭环。任一路 R &gt; Rmax、I &gt; 2.1 A、相关状态持续超过 12 s、或次数达到设定值时，经 0x06 停机/报警并写入故障表。</p>
 <p><strong>18.2.6 实时曲线与交互可视化。</strong> 三路电阻共用左 Y 轴，电流用右 Y 轴。动态追加 XYSeries，维护滑动窗口。鼠标按 |Xᵢ − x| 最近邻显示 R1/R2/R3/I。</p>
 <p><strong>18.2.7 数据持久化与历史回放。</strong> 四组 XY 按同一采样序号批量写入 test_results。loadedPointCount 与 loadedTestBianHao 支持续测只追加新增点。历史按横坐标升序回放。policetime 保存异常类型、次数与时间。</p>
-<h3>18.3 关键算法设计</h3>
+<h3 id="183">18.3 关键算法设计</h3>
 <p>本系统中的算法属于实时测控、工业通信和故障诊断，不是机器学习。</p>
-<h4>18.3.1 Modbus RTU CRC16 校验算法</h4>
+<h4 id="1831-modbus-rtu-crc16">18.3.1 Modbus RTU CRC16 校验算法</h4>
 <p>CRC 初值 0xFFFF，与数据字节异或后对每个字节做 8 次最低位判断：LSB=1 则右移再异或 0xA001，否则仅右移。16 位 CRC 低字节先发送，高字节后发送。</p>
 <p>(1) CRC₀ = 0xFFFF</p>
 <p>(2) CRC ← (CRC ≫ 1) ⊕ 0xA001　　（LSB = 1）</p>
 <p>(3) CRC ← CRC ≫ 1　　（LSB = 0）</p>
 <p>源码：<code>RRuANDWone.calculateCRC16</code>。</p>
-<h4>18.3.2 状态边沿识别与防重复触发算法</h4>
+<h4 id="1832">18.3.2 状态边沿识别与防重复触发算法</h4>
 <p>持续高电平若每轮都当新动作，会重复计数或重复采样。AtomicBoolean 在首次进入有效状态时采集并置已处理，状态恢复后再开放下一次触发。等价于边沿检测与去抖式去重。</p>
-<h4>18.3.3 基于状态触发时间差的速度估计算法</h4>
+<h4 id="1833">18.3.3 基于状态触发时间差的速度估计算法</h4>
 <p>记录相邻有效触发时间戳。tₖ、tₖ₋₁ 单位 ms。仅当 Δt &gt; 2 s 时计算并显示。常数 120 的机械含义源码未注释，论文只写公式。</p>
 <p>(4) Δt = (tₖ − tₖ₋₁) / 1000</p>
 <p>(5) v = round(120 / Δt)</p>
-<h4>18.3.4 接触电阻阈值诊断算法</h4>
+<h4 id="1834">18.3.4 接触电阻阈值诊断算法</h4>
 <p>Rmax 从数据库读取。「任一路越限即故障」，避免单触点劣化被平均值掩盖。</p>
 <p>(6) Rfault = 1，若 max(R₁, R₂, R₃) &gt; Rmax</p>
 <p>(7) Rfault = 0，否则</p>
-<h4>18.3.5 电流越限判定算法</h4>
+<h4 id="1835">18.3.5 电流越限判定算法</h4>
 <p>(8) Ifault = 1，若 I &gt; 2.1 A</p>
 <p>立即写控制寄存器，结束循环，记录「电流值故障」。</p>
-<h4>18.3.6 基于时间窗口的机构超时故障诊断</h4>
+<h4 id="1836">18.3.6 基于时间窗口的机构超时故障诊断</h4>
 <p>某动作状态在预期切换阶段持续超过 12 s，判定卡滞、无转动或反馈丢失。源码窗口为 12 s &lt; Δt &lt; 10000 s，上界避开未初始化伪超时。</p>
 <p>(9) Tfault = 1，若 Δt_no-signal &gt; 12 s</p>
-<h4>18.3.7 测试次数终止判定</h4>
+<h4 id="1837">18.3.7 测试次数终止判定</h4>
 <p>(10) Stop = 1，若 Ncurrent ≥ Nset</p>
 <p>比较 timeSeconds 与数据库配置的目标次数。</p>
-<h4>18.3.8 曲线最近邻点检索算法</h4>
+<h4 id="1838">18.3.8 曲线最近邻点检索算法</h4>
 <p>鼠标坐标转为数据坐标 x，在按 X 递增的 XYSeries 中找 |Xᵢ − x| 最小点；距离开始增大即可早停。</p>
 <p>(11) i* = arg minᵢ |Xᵢ − xmouse|</p>
-<h4>18.3.9 历史数据增量保存算法</h4>
+<h4 id="1839">18.3.9 历史数据增量保存算法</h4>
 <p>(12) saveStartIndex = loadedPointCount，若 IDcurrent = IDloaded</p>
 <p>(13) saveStartIndex = 0，否则</p>
 <p>实现「加载—继续采集—仅追加新增点」，避免曲线和累计次数失真。</p>
-<h3>18.4 核心测试控制流程</h3>
+<h3 id="184">18.4 核心测试控制流程</h3>
 <p>开始测试后读取阈值和次数，初始化控制寄存器并进入后台采集线程；持续读取 PLC/IO 状态，按状态触发电阻或电流采集，执行速度估计、阈值判断和超时判断；异常则 0x06 联锁停机并记故障；未达终止条件则继续下一轮。</p>
 <p><img alt="图 18-2 核心测试控制算法流程图" src="/figures/fig2-control-flow.png" /></p>
 <p><strong>图 18-2</strong> 核心测试控制算法流程图（论文图 2）</p>
-<h3>18.5 模块输入—处理—输出关系</h3>
+<h3 id="185">18.5 模块输入—处理—输出关系</h3>
 <table>
 <thead>
 <tr>
@@ -700,11 +784,11 @@
 </tr>
 </tbody>
 </table>
-<h3>18.6 可直接用于论文的系统设计表述</h3>
+<h3 id="186">18.6 可直接用于论文的系统设计表述</h3>
 <p>本研究采用 Java 语言开发寿命试验上位机软件，并基于 Swing 构建人机交互界面。系统通过 jSerialComm 实现上位机与下位控制器之间的串口通信，在 Modbus RTU 协议框架下分别采用 0x04 功能码读取输入寄存器、采用 0x06 功能码写单个保持寄存器，实现状态监测与试验机构控制。为提高通信可靠性，软件在请求帧中嵌入 CRC-16/Modbus 校验。</p>
 <p>在实时测试阶段，软件采用 ExecutorService 将设备轮询与数据采集任务放置于后台线程中执行，并利用 AtomicBoolean 对关键状态进行防重复触发控制。系统根据 PLC 输入状态选择性采集三路接触电阻和一路电流，结合相邻动作触发时间差计算运行速度。针对寿命试验过程中可能出现的异常，构建了基于接触电阻阈值、电流阈值和动作超时的多条件故障判定策略。当检测到任一路接触电阻超过设定上限、电流超过 2.1 A，或关键动作状态持续超过 12 s 时，系统立即发送控制指令执行停机和报警，并将故障类型及发生时刻写入数据库。</p>
 <p>测试数据采用 JFreeChart 进行动态可视化，其中三路接触电阻共用左侧 Y 轴，电流采用独立右侧 Y 轴。各通道数据以 XYSeries 形式实时追加，并通过滑动时间窗口实现连续趋势显示。为支持历史试验追溯，软件以测试编号为索引保存曲线数据，并设计增量保存机制：对已加载的历史编号仅保存后续新增数据点，从而避免重复记录。历史记录重新加载后，可恢复原有曲线、测试日期及累计次数，并在历史最大横坐标之后继续绘制，实现寿命试验数据的连续记录。</p>
-<h3>18.7 附录：源码对照与算法命名</h3>
+<h3 id="187">18.7 附录：源码对照与算法命名</h3>
 <table>
 <thead>
 <tr>
@@ -767,21 +851,45 @@
 </tbody>
 </table>
 <p>论文算法命名建议：「实时测控与故障诊断算法」「基于状态触发的速度估计算法」「基于阈值与时间窗口的故障判定算法」「Modbus RTU 报文校验算法」「历史曲线增量存储算法」。源码未实现机器学习、神经网络、模糊控制、PID 自适应控制，论文中不要写入。</p>
-<h3>18.8 4 拖 1 拓展版源码中的补充算法</h3>
+<h3 id="188-4-1">18.8 4 拖 1 拓展版源码中的补充算法</h3>
 <p>下列算法只存在于 <code>SixMeterInstrumentReader</code> 与 <code>ZzhejiPanel-20260811</code>，不出现在论文图 1、图 2。写基础版论文时不要并入 18.1–18.6。</p>
 <p><strong>算法 18-D 八仪表时分复用轮询。</strong> COM5 从站 01–08。独立线程每 100 ms 启动一轮，顺序读 01–04 电流、05–08 电阻，listener 等待约 80 ms，合法响应写入 ConcurrentHashMap。工位循环只读缓存。一轮约 800 ms。</p>
 <p><strong>算法 18-E 八字输入寄存器同步快照。</strong> COM4、PLC 地址 0x01、功能码 0x04、数量 8。<code>readAndProcessRegisters</code> 加 synchronized，一次读回 8 字再按工位切开，各站用本站 AtomicBoolean 做边沿闩锁。</p>
 <p><strong>算法 18-F 分站 Future 独立启停。</strong> 每站独立线程池与 Future。开始置本站 isTestingStarted 并提交本站循环；停止 cancel 本站 Future 并写本站运行寄存器为 0。其他站不受影响。</p>
-    <p class="foot">手机阅读版由课题报告 Markdown 生成。可先把 Word 存到手机，离线也能看。</p>
+    <p class="foot">点右下角或顶栏「目录」可跳转各节。建议先下载 Word 存到手机。</p>
   </article>
   <script>
-    document.querySelectorAll("table").forEach(function (table) {
-      if (table.parentElement && table.parentElement.classList.contains("table-wrap")) return;
-      var wrap = document.createElement("div");
-      wrap.className = "table-wrap";
-      table.parentNode.insertBefore(wrap, table);
-      wrap.appendChild(table);
+    function wrapTables() {
+      document.querySelectorAll("table").forEach(function (table) {
+        if (table.parentElement && table.parentElement.classList.contains("table-wrap")) return;
+        var wrap = document.createElement("div");
+        wrap.className = "table-wrap";
+        table.parentNode.insertBefore(wrap, table);
+        wrap.appendChild(table);
+      });
+    }
+    function setOpen(open) {
+      document.getElementById("drawer").classList.toggle("open", open);
+      document.getElementById("mask").classList.toggle("open", open);
+      document.body.style.overflow = open ? "hidden" : "";
+    }
+    document.getElementById("openMenu").onclick = function () { setOpen(true); };
+    document.getElementById("fab").onclick = function () { setOpen(true); };
+    document.getElementById("mask").onclick = function () { setOpen(false); };
+    document.querySelectorAll(".toc a").forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        var id = decodeURIComponent((link.getAttribute("href") || "").replace("#", ""));
+        var target = document.getElementById(id);
+        if (!target) return;
+        event.preventDefault();
+        setOpen(false);
+        window.setTimeout(function () {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+          history.replaceState(null, "", "#" + id);
+        }, 80);
+      });
     });
+    wrapTables();
   </script>
 </body>
 </html>

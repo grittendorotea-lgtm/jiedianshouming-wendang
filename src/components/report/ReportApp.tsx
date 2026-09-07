@@ -224,8 +224,8 @@ export function ReportApp() {
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Button asChild>
-                <a href="https://litter.catbox.moe/ixh24k.html">
-                  手机长期阅读（至周二17:00）
+                <a href="https://litter.catbox.moe/1v1ug5.html">
+                  手机目录阅读（至周二17:00）
                 </a>
               </Button>
               <Button variant="outline" asChild>

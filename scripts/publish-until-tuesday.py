@@ -36,13 +36,13 @@ def build_standalone() -> Path:
     html = html.replace('href="/"', 'href="#top"')
     html = html.replace('href="/print"', f'href="{word_uri}" download="继电器接点寿命测试软件-课题报告.docx"')
     notice = """
-  <p style="margin:0;padding:.65rem .9rem;background:#fff4d6;color:#6a3b00;font-size:13.5px;line-height:1.6;">
-    本页已放到独立托管，不依赖你的电脑或 Cursor 云端机器。目标是至少能看到
-    <strong>2026年9月8日（周二）北京时间 17:00</strong>。
-    仍建议先点「下载 Word」存到手机。
+  <p style="margin:0 0 1rem;padding:.65rem .8rem;background:#fff4d6;color:#6a3b00;font-size:13.5px;line-height:1.6;">
+    点右下角或顶栏「目录」可跳到对应章节。本页独立托管，目标看到
+    <strong>2026年9月8日周二北京时间 17:00</strong>。请先下载 Word。
   </p>
 """
-    html = html.replace("<article>", '<article id="top">' + notice, 1)
+    html = html.replace("<article>", "<article>" + notice, 1)
+    html = html.replace('id="wordBtn" href="/word"', 'id="wordBtn" href="' + word_uri + '" download="继电器接点寿命测试软件-课题报告.docx"')
     OUT_HTML.write_text(html, encoding="utf-8")
     return OUT_HTML
 
@@ -156,6 +156,24 @@ def main() -> None:
     checks = {name: check_url(url) for name, url in hosts.items() if name.endswith("error") is False and url.startswith("http")}
     print(json.dumps(checks, ensure_ascii=False, indent=2))
     RESULT.write_text(json.dumps({"hosts": hosts, "checks": checks}, ensure_ascii=False, indent=2), encoding="utf-8")
+    chosen = None
+    for key in ("litterbox72h", "catbox", "0x0", "transfer"):
+        if hosts.get(key, "").startswith("http") and checks.get(key, {}).get("looks_html"):
+            chosen = hosts[key]
+            break
+    if chosen:
+        import qrcode
+
+        qr = qrcode.QRCode(border=2, box_size=10)
+        qr.add_data(chosen)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="#1e2a4a", back_color="white")
+        img.save(PUBLIC / "qr-phone.png")
+        (OUT_DIR / "PHONE-URL.txt").write_text(
+            chosen + "\n带目录跳转的手机阅读页。72小时托管，覆盖周二17:00。\n",
+            encoding="utf-8",
+        )
+        print("chosen", chosen)
 
 
 if __name__ == "__main__":
