@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { MARKDOWN_FILE, WORD_FILE } from "@/lib/site";
+import { GITHUB_PAGES_URL, GITHUB_REPO_URL, MARKDOWN_FILE, QR_FILE, WORD_FILE } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { navItems } from "./nav-items";
 import { PartFive } from "./sections/PartFive";
@@ -229,10 +229,21 @@ export function ReportApp() {
               1，第十七节为重难点，第十八节按论文稿给出七层模块框图、公式 (1)–(13) 与关键算法。
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
+              <Button asChild>
+                <a href={GITHUB_PAGES_URL} target="_blank" rel="noreferrer">
+                  GitHub Pages
+                </a>
+              </Button>
+              <Button variant="outline" asChild>
+                <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer">
+                  <Github className="h-4 w-4" />
+                  打开仓库
+                </a>
+              </Button>
               <Button variant="outline" asChild>
                 <a href={MARKDOWN_FILE}>手机 Markdown</a>
               </Button>
-              <Button asChild>
+              <Button variant="outline" asChild>
                 <a
                   href={WORD_FILE}
                   download="继电器接点寿命测试软件-课题报告.docx"
@@ -248,22 +259,40 @@ export function ReportApp() {
                 </Link>
               </Button>
             </div>
-            <div className="mt-5 flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4">
-              <Github className="mt-0.5 h-5 w-5 shrink-0 text-slate-800" />
+            <div className="mt-5 flex items-start gap-4 rounded-xl border border-slate-200 bg-white p-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={QR_FILE}
+                alt="扫码打开 GitHub Pages"
+                className="h-28 w-28 shrink-0 rounded-md border border-border bg-white"
+              />
               <div className="text-sm leading-7 text-slate-600">
                 <p className="font-medium text-slate-900">长期存放在 GitHub</p>
                 <p>
-                  网页、Word、插图、Markdown 和 Java
-                  源码都在同一个仓库里。用 GitHub Pages
-                  打开网站后，手机和电脑访问的是同一份内容，地址形如：
+                  网页、Word、插图、Markdown 和 Java 源码都在仓库
+                  <a
+                    href={GITHUB_REPO_URL}
+                    className="mx-1 text-primary underline-offset-4 hover:underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    grittendorotea-lgtm/footboll
+                  </a>
+                  。手机扫码或打开：
                 </p>
                 <p className="mt-1 break-all font-mono text-[13px] text-slate-800">
-                  https://你的用户名.github.io/仓库名/
+                  <a
+                    href={GITHUB_PAGES_URL}
+                    className="underline-offset-4 hover:underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {GITHUB_PAGES_URL}
+                  </a>
                 </p>
                 <p className="mt-1">
-                  不必把 GitHub 密码发给任何人。仓库创建后，GitHub Actions
-                  会自动发布 Pages；若第一次没有出现网页，到仓库 Settings → Pages，把
-                  Source 设为 GitHub Actions。
+                  第一次若打不开网页，到仓库 Settings → Pages，把 Source 设为
+                  GitHub Actions。不必把 GitHub 密码发给任何人。
                 </p>
               </div>
             </div>
