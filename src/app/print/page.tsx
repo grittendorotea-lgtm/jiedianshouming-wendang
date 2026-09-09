@@ -8,6 +8,7 @@ import { PartSeven } from "@/components/report/sections/PartSeven";
 import { PartSix } from "@/components/report/sections/PartSix";
 import { PartThree } from "@/components/report/sections/PartThree";
 import { PartTwo } from "@/components/report/sections/PartTwo";
+import { WORD_FILE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "继电器接点寿命测试软件 · 打印稿",
@@ -21,7 +22,11 @@ export default function PrintPage() {
           返回阅读版
         </Link>
         <span className="text-slate-400"> · </span>
-        <a href="/word" className="text-primary underline-offset-4 hover:underline">
+        <a
+          href={WORD_FILE}
+          download="继电器接点寿命测试软件-课题报告.docx"
+          className="text-primary underline-offset-4 hover:underline"
+        >
           下载 Word
         </a>
         <span className="text-slate-400"> · 用浏览器打印可导出 PDF</span>
@@ -34,7 +39,11 @@ export default function PrintPage() {
       <p className="mt-4 leading-8 text-slate-600">
         前十五节写基础版功能与关键技术，第十六节单独写 4 拖 1
         方案，第十七节归纳重难点，第十八节按论文稿给出七层框图、公式与关键算法。可
-        <a href="/word" className="mx-1 text-primary underline-offset-4 hover:underline">
+        <a
+          href={WORD_FILE}
+          download="继电器接点寿命测试软件-课题报告.docx"
+          className="mx-1 text-primary underline-offset-4 hover:underline"
+        >
           下载 Word
         </a>
         ，也可在浏览器打印导出 PDF。

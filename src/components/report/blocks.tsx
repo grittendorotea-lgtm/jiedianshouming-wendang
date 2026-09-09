@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { withBase } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export function Section({
@@ -186,7 +187,7 @@ export function PaperImg({
     <figure className="my-5 break-inside-avoid rounded-xl border border-slate-200 bg-white px-2 py-3 md:px-4">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={src}
+        src={src.startsWith("http") ? src : withBase(src)}
         alt={`图${no} ${title}`}
         className="mx-auto max-h-[44rem] w-full object-contain"
       />

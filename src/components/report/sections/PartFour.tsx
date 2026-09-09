@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Callout, CodeBlock, KvTable, QABody, QAList, Section, Sub } from "../blocks";
+import { CodeBlock, KvTable, QABody, QAList, Section, Sub } from "../blocks";
 import { Figure, SeqTable } from "../flowchart";
 
 export function PartFour() {

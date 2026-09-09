@@ -109,7 +109,7 @@
 <body>
   <nav class="bar">
     <button type="button" class="menu-btn" id="openMenu">目录</button>
-    <a class="primary" id="wordBtn" href="/word">下载 Word</a>
+    <a class="primary" id="wordBtn" href="downloads/relay-life-test-report.docx" download="继电器接点寿命测试软件-课题报告.docx">下载 Word</a>
   </nav>
   <div class="mask" id="mask"></div>
   <aside class="drawer" id="drawer">
@@ -519,7 +519,7 @@
 <h3 id="181">18.1 软件系统总体设计</h3>
 <p>该软件面向继电器或具有往复动作机构的寿命试验过程，采用「上位机界面—串口通信—PLC/IO 状态采集—电参数采集—实时判定—联锁控制—曲线显示—数据库追溯」的闭环结构。软件不仅完成测试数据的显示与保存，还承担动作状态识别、速度计算、接触电阻与电流越限判定、机构超时诊断以及异常停机控制等实时测控任务。</p>
 <p>系统划分为七个功能层：人机交互与参数管理、测试控制与并发调度、设备通信与协议、数据采集与信号解析、实时控制与故障诊断、实时曲线与交互可视化、数据持久化与历史回放。各层通过状态量、测量量和控制命令形成闭环数据流。</p>
-<p><img alt="图 18-1 软件总体模块框图" src="/figures/fig1-module-architecture.png" /></p>
+<p><img alt="图 18-1 软件总体模块框图" src="figures/fig1-module-architecture.png" /></p>
 <p><strong>图 18-1</strong> 软件总体模块框图（论文图 1）</p>
 <p>表 1 各层级的技术与算法对应关系</p>
 <table>
@@ -703,7 +703,7 @@
 <p>实现「加载—继续采集—仅追加新增点」，避免曲线和累计次数失真。</p>
 <h3 id="184">18.4 核心测试控制流程</h3>
 <p>开始测试后读取阈值和次数，初始化控制寄存器并进入后台采集线程；持续读取 PLC/IO 状态，按状态触发电阻或电流采集，执行速度估计、阈值判断和超时判断；异常则 0x06 联锁停机并记故障；未达终止条件则继续下一轮。</p>
-<p><img alt="图 18-2 核心测试控制算法流程图" src="/figures/fig2-control-flow.png" /></p>
+<p><img alt="图 18-2 核心测试控制算法流程图" src="figures/fig2-control-flow.png" /></p>
 <p><strong>图 18-2</strong> 核心测试控制算法流程图（论文图 2）</p>
 <h3 id="185">18.5 模块输入—处理—输出关系</h3>
 <table>

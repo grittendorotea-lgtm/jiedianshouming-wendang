@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 43217 -H 0.0.0.0",
     "build": "next build",
-    "start": "next start -p 43217 -H 0.0.0.0",
+    "start": "npx --yes serve@14 out -l tcp://0.0.0.0:43217",
     "lint": "next lint",
     "docx": "python3 scripts/build-docx.py"
   },

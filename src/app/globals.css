@@ -48,6 +48,8 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC",
+      "Microsoft YaHei", sans-serif;
   }
 }
 

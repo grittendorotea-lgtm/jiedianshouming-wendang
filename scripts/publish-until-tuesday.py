@@ -31,8 +31,14 @@ def build_standalone() -> Path:
     html = MD.read_text(encoding="utf-8")
     html = html.replace("/figures/fig1-module-architecture.png", data_uri(FIG1))
     html = html.replace("/figures/fig2-control-flow.png", data_uri(FIG2))
+    html = html.replace("figures/fig1-module-architecture.png", data_uri(FIG1))
+    html = html.replace("figures/fig2-control-flow.png", data_uri(FIG2))
     word_uri = data_uri(DOCX)
     html = html.replace('href="/word"', f'href="{word_uri}" download="继电器接点寿命测试软件-课题报告.docx"')
+    html = html.replace(
+        'href="downloads/relay-life-test-report.docx"',
+        f'href="{word_uri}" download="继电器接点寿命测试软件-课题报告.docx"',
+    )
     html = html.replace('href="/"', 'href="#top"')
     html = html.replace('href="/print"', f'href="{word_uri}" download="继电器接点寿命测试软件-课题报告.docx"')
     notice = """
@@ -43,6 +49,10 @@ def build_standalone() -> Path:
 """
     html = html.replace("<article>", "<article>" + notice, 1)
     html = html.replace('id="wordBtn" href="/word"', 'id="wordBtn" href="' + word_uri + '" download="继电器接点寿命测试软件-课题报告.docx"')
+    html = html.replace(
+        'id="wordBtn" href="downloads/relay-life-test-report.docx"',
+        'id="wordBtn" href="' + word_uri + '" download="继电器接点寿命测试软件-课题报告.docx"',
+    )
     OUT_HTML.write_text(html, encoding="utf-8")
     return OUT_HTML
 

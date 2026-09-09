@@ -22,11 +22,11 @@ def prepare_markdown(text: str) -> str:
     )
     text = text.replace(
         "图 18-1 软件总体模块框图（论文图 1）",
-        "![图 18-1 软件总体模块框图](/figures/fig1-module-architecture.png)\n\n**图 18-1** 软件总体模块框图（论文图 1）",
+        "![图 18-1 软件总体模块框图](figures/fig1-module-architecture.png)\n\n**图 18-1** 软件总体模块框图（论文图 1）",
     )
     text = text.replace(
         "图 18-2 核心测试控制算法流程图（论文图 2）",
-        "![图 18-2 核心测试控制算法流程图](/figures/fig2-control-flow.png)\n\n**图 18-2** 核心测试控制算法流程图（论文图 2）",
+        "![图 18-2 核心测试控制算法流程图](figures/fig2-control-flow.png)\n\n**图 18-2** 核心测试控制算法流程图（论文图 2）",
     )
     return text
 
@@ -156,7 +156,7 @@ def main() -> None:
 <body>
   <nav class="bar">
     <button type="button" class="menu-btn" id="openMenu">目录</button>
-    <a class="primary" id="wordBtn" href="/word">下载 Word</a>
+    <a class="primary" id="wordBtn" href="downloads/relay-life-test-report.docx" download="继电器接点寿命测试软件-课题报告.docx">下载 Word</a>
   </nav>
   <div class="mask" id="mask"></div>
   <aside class="drawer" id="drawer">

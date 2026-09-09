@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, FileDown, List, Printer, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileDown, Github, List, Printer, X } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { MARKDOWN_FILE, WORD_FILE } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { navItems } from "./nav-items";
 import { PartFive } from "./sections/PartFive";
@@ -107,14 +108,15 @@ export function ReportApp() {
       </p>
       <div className="mt-4 flex flex-col gap-2">
         <a
-          href="/md.html"
+          href={MARKDOWN_FILE}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-sidebar-primary hover:underline"
           onClick={() => setOpen(false)}
         >
           手机阅读 Markdown
         </a>
         <a
-          href="/word"
+          href={WORD_FILE}
+          download="继电器接点寿命测试软件-课题报告.docx"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-sidebar-primary hover:underline"
           onClick={() => setOpen(false)}
         >
@@ -143,7 +145,11 @@ export function ReportApp() {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Button variant="outline" size="icon" asChild>
-              <a href="/word" aria-label="下载 Word">
+              <a
+                href={WORD_FILE}
+                download="继电器接点寿命测试软件-课题报告.docx"
+                aria-label="下载 Word"
+              >
                 <FileDown className="h-4 w-4" />
               </a>
             </Button>
@@ -223,16 +229,14 @@ export function ReportApp() {
               1，第十七节为重难点，第十八节按论文稿给出七层模块框图、公式 (1)–(13) 与关键算法。
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
+              <Button variant="outline" asChild>
+                <a href={MARKDOWN_FILE}>手机 Markdown</a>
+              </Button>
               <Button asChild>
-                <a href="https://litter.catbox.moe/1v1ug5.html">
-                  手机目录阅读（至周二17:00）
-                </a>
-              </Button>
-              <Button variant="outline" asChild>
-                <a href="/md.html">本机 Markdown</a>
-              </Button>
-              <Button variant="outline" asChild>
-                <a href="/word">
+                <a
+                  href={WORD_FILE}
+                  download="继电器接点寿命测试软件-课题报告.docx"
+                >
                   <FileDown className="h-4 w-4" />
                   下载 Word
                 </a>
@@ -244,18 +248,22 @@ export function ReportApp() {
                 </Link>
               </Button>
             </div>
-            <div className="mt-5 hidden items-center gap-4 rounded-xl border border-border bg-white p-3 sm:flex">
-              <img
-                src="/qr-phone.png"
-                alt="手机扫码阅读报告"
-                className="h-28 w-28 rounded-md border border-border bg-white"
-              />
+            <div className="mt-5 flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4">
+              <Github className="mt-0.5 h-5 w-5 shrink-0 text-slate-800" />
               <div className="text-sm leading-7 text-slate-600">
-                <p className="font-medium text-slate-900">手机扫码阅读（独立托管）</p>
+                <p className="font-medium text-slate-900">长期存放在 GitHub</p>
                 <p>
-                  扫码打开的是独立网页，不依赖这台云端机器，按 72 小时托管计算，至少能看到
-                  2026年9月8日周二北京时间 17:00。建议在 Safari / Chrome
-                  打开；微信里若打不开，点右上角选“用浏览器打开”。请先点页面上的「下载 Word」存到手机。
+                  网页、Word、插图、Markdown 和 Java
+                  源码都在同一个仓库里。用 GitHub Pages
+                  打开网站后，手机和电脑访问的是同一份内容，地址形如：
+                </p>
+                <p className="mt-1 break-all font-mono text-[13px] text-slate-800">
+                  https://你的用户名.github.io/仓库名/
+                </p>
+                <p className="mt-1">
+                  不必把 GitHub 密码发给任何人。仓库创建后，GitHub Actions
+                  会自动发布 Pages；若第一次没有出现网页，到仓库 Settings → Pages，把
+                  Source 设为 GitHub Actions。
                 </p>
               </div>
             </div>
@@ -315,7 +323,11 @@ export function ReportApp() {
             。PLC 读写类 RRuANDWone 未包含在这批文件中，其行为根据主界面调用还原。
             完整可粘贴正文见仓库 <code>docs/课题报告-功能实现分析.md</code>
             。也可
-            <a href="/word" className="mx-1 text-primary underline-offset-4 hover:underline">
+            <a
+              href={WORD_FILE}
+              download="继电器接点寿命测试软件-课题报告.docx"
+              className="mx-1 text-primary underline-offset-4 hover:underline"
+            >
               下载 Word
             </a>
             ，或打开
